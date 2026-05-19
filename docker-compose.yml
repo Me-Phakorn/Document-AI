@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: docai-postgres
+    environment:
+      POSTGRES_DB: docai
+      POSTGRES_USER: docai
+      POSTGRES_PASSWORD: docai
+    ports:
+      - "5432:5432"
+    volumes:
+      - docai-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docai -d docai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: docai-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: docai-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: docai-local
+      MINIO_ROOT_PASSWORD: docai-local-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - docai-minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  docai-postgres-data:
+  docai-minio-data:

@@ -1,0 +1,22 @@
+{
+  "name": "docai",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:front-end": "pnpm --filter @docai/front-end dev",
+    "dev:back-end": "pnpm --filter @docai/back-end dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "prisma:generate": "pnpm --filter @docai/back-end prisma:generate",
+    "prisma:validate": "pnpm --filter @docai/back-end prisma:validate",
+    "prisma:migrate:dev": "pnpm --filter @docai/back-end prisma:migrate:dev",
+    "seed": "pnpm --filter @docai/back-end seed"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

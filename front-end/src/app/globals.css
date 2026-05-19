@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f6f7fb;
+  --panel: #ffffff;
+  --raised: #f0f3f8;
+  --border: #e1e6ef;
+  --ghost: #cbd4e2;
+  --t1: #172033;
+  --t2: #596579;
+  --t3: #8a95a8;
+  --accent: #4f46e5;
+  --accent-lo: rgba(79, 70, 229, 0.1);
+  --green: #168a4a;
+  --amber: #b56a09;
+  --red: #cf2e35;
+  --blue: #2563eb;
+  --font-sans: Inter, 'Noto Sans Thai', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: var(--accent-lo);
+}

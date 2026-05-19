@@ -1,0 +1,602 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  REVIEWER
+  ANALYST
+  VIEWER
+}
+
+enum SourceType {
+  UPLOAD
+  WEBSITE_SCAN
+  API
+}
+
+enum DocumentStatus {
+  UPLOADED
+  DOWNLOADED
+  PROCESSING
+  OCR_PROCESSING
+  OCR_COMPLETED
+  OCR_PARTIAL
+  OCR_FAILED
+  AI_PENDING
+  AI_PROCESSING
+  AI_COMPLETED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  NOT_RELEVANT
+  FAILED
+  ARCHIVED
+}
+
+enum OcrStatus {
+  NOT_REQUIRED
+  PENDING
+  PROCESSING
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
+enum WebsiteScanStatus {
+  IDLE
+  SCANNING
+  COMPLETED
+  FAILED
+  PARTIAL_FAILED
+}
+
+enum DocumentGroupStatus {
+  DRAFT
+  QUEUED
+  PROCESSING
+  COMPLETED
+  PARTIAL_FAILED
+  CANCELLED
+  FAILED
+}
+
+enum PromptStatus {
+  DRAFT
+  ACTIVE
+  DEPRECATED
+  ARCHIVED
+}
+
+enum AiAnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AiAnalysisOutcome {
+  RULES_FOUND
+  NO_RULES_FOUND
+  NOT_RELEVANT
+  FAILED
+}
+
+enum ReviewType {
+  SOURCE_AI_RESULT
+  NOT_RELEVANT
+  RULEBOOK_VERSION
+  COMPLIANCE_CHECK
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REQUEST_CHANGES
+}
+
+enum ReviewOutcome {
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+  CONFIRMED_NOT_RELEVANT
+  OVERRIDDEN
+}
+
+enum RiskLevel {
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum RulebookStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PUBLISHED
+  NEEDS_REVIEW
+  SUPERSEDED
+  ARCHIVED
+}
+
+enum ComplianceInputType {
+  IMAGE
+  PDF
+  TEXT
+  URL
+  SOCIAL_POST
+  SCREENSHOT
+}
+
+enum ComplianceCheckStatus {
+  PENDING
+  PROCESSING
+  COMPLIANT
+  NON_COMPLIANT
+  POTENTIAL_VIOLATION
+  AMBIGUOUS
+  INSUFFICIENT_INFORMATION
+  NEED_HUMAN_REVIEW
+  REJECTED
+  APPROVED
+  FAILED
+}
+
+enum ReportType {
+  RULE_EXTRACTION
+  COMPLIANCE_USAGE
+}
+
+enum ReportStatus {
+  DRAFT
+  GENERATING
+  COMPLETED
+  FAILED
+  ARCHIVED
+}
+
+enum ExportFormat {
+  PDF
+  XLSX
+  JSON
+}
+
+enum ExportStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum StoredObjectLifecycleStatus {
+  CURRENT
+  SUPERSEDED
+  ARCHIVED
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  displayName String
+  role        UserRole @default(VIEWER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  documents Document[]
+}
+
+model Document {
+  id        String         @id @default(uuid()) @db.Uuid
+  title     String
+  domain    String?
+  sourceType SourceType
+  status    DocumentStatus @default(UPLOADED)
+  ownerId   String?        @db.Uuid
+  owner     User?          @relation(fields: [ownerId], references: [id])
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  versions DocumentVersion[]
+
+  @@index([status, createdAt])
+  @@index([sourceType, createdAt])
+  @@index([ownerId, createdAt])
+}
+
+model DocumentVersion {
+  id           String         @id @default(uuid()) @db.Uuid
+  documentId   String         @db.Uuid
+  document     Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  title        String
+  sourceUrl    String?
+  sourceUrlHash String?
+  fileName     String?
+  mimeType     String?
+  byteSize     BigInt?
+  fileSha256   String?
+  contentSha256 String?
+  status       DocumentStatus @default(UPLOADED)
+  ocrStatus    OcrStatus      @default(PENDING)
+  isLatest     Boolean        @default(true)
+  previousVersionId String?   @db.Uuid
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  ocrArtifacts OcrArtifact[]
+  aiResults    AiAnalysisResult[]
+
+  @@unique([documentId, versionNumber])
+  @@index([sourceUrlHash])
+  @@index([fileSha256])
+  @@index([contentSha256])
+  @@index([status, createdAt])
+  @@index([ocrStatus, createdAt])
+}
+
+model WebsiteSource {
+  id          String            @id @default(uuid()) @db.Uuid
+  name        String
+  baseUrl     String
+  domain      String?
+  isActive    Boolean           @default(true)
+  scanConfig  Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  scans WebsiteScan[]
+}
+
+model WebsiteScan {
+  id              String            @id @default(uuid()) @db.Uuid
+  websiteSourceId String            @db.Uuid
+  websiteSource   WebsiteSource     @relation(fields: [websiteSourceId], references: [id], onDelete: Cascade)
+  status          WebsiteScanStatus @default(IDLE)
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  discoveredCount Int               @default(0)
+  importedCount   Int               @default(0)
+  duplicateCount  Int               @default(0)
+  failureReason   String?
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+
+  @@index([websiteSourceId, createdAt])
+  @@index([status, createdAt])
+}
+
+model DocumentGroup {
+  id          String              @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  domain      String?
+  ownerId     String?             @db.Uuid
+  promptTemplateVersionId String? @db.Uuid
+  status      DocumentGroupStatus @default(DRAFT)
+  totalDocuments Int              @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  jobs BatchAnalysisJob[]
+
+  @@index([status, createdAt])
+  @@index([ownerId, createdAt])
+}
+
+model BatchAnalysisJob {
+  id              String              @id @default(uuid()) @db.Uuid
+  documentGroupId String              @db.Uuid
+  documentGroup   DocumentGroup       @relation(fields: [documentGroupId], references: [id], onDelete: Cascade)
+  status          DocumentGroupStatus @default(QUEUED)
+  totalDocuments  Int                 @default(0)
+  queuedCount     Int                 @default(0)
+  processingCount Int                 @default(0)
+  completedCount  Int                 @default(0)
+  failedCount     Int                 @default(0)
+  cancelledAt     DateTime?
+  failureReason   String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([status, createdAt])
+  @@index([documentGroupId, createdAt])
+}
+
+model PromptTemplate {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String
+  domain      String?
+  tags        String[]
+  status      PromptStatus @default(DRAFT)
+  createdById String?      @db.Uuid
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  versions PromptTemplateVersion[]
+}
+
+model PromptTemplateVersion {
+  id               String         @id @default(uuid()) @db.Uuid
+  promptTemplateId String         @db.Uuid
+  promptTemplate   PromptTemplate @relation(fields: [promptTemplateId], references: [id], onDelete: Cascade)
+  versionNumber    Int
+  status           PromptStatus   @default(DRAFT)
+  templateText     String
+  variables        String[]
+  createdById      String?        @db.Uuid
+  createdAt        DateTime       @default(now())
+
+  instances PromptInstance[]
+
+  @@unique([promptTemplateId, versionNumber])
+  @@index([status, createdAt])
+}
+
+model PromptInstance {
+  id                      String                @id @default(uuid()) @db.Uuid
+  promptTemplateVersionId String                @db.Uuid
+  promptTemplateVersion   PromptTemplateVersion @relation(fields: [promptTemplateVersionId], references: [id])
+  documentVersionId       String?               @db.Uuid
+  documentGroupId         String?               @db.Uuid
+  renderedPromptHash      String
+  variables               Json?
+  provider                String
+  model                   String
+  tokenUsage              Int?
+  estimatedCost           Decimal?              @db.Decimal(12, 4)
+  latencyMs               Int?
+  createdAt               DateTime              @default(now())
+
+  aiResults AiAnalysisResult[]
+
+  @@index([promptTemplateVersionId, createdAt])
+  @@index([documentVersionId, createdAt])
+  @@index([documentGroupId, createdAt])
+}
+
+model OcrArtifact {
+  id                String          @id @default(uuid()) @db.Uuid
+  documentVersionId String          @db.Uuid
+  documentVersion   DocumentVersion @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  engine            String
+  status            OcrStatus       @default(PENDING)
+  aggregateConfidence Float?
+  minPageConfidence Float?
+  pageCount         Int?
+  failedPages       Json?
+  warnings          Json?
+  searchableObjectId String?        @db.Uuid
+  textObjectId      String?         @db.Uuid
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([documentVersionId, createdAt])
+  @@index([status, createdAt])
+}
+
+model AiAnalysisResult {
+  id                String            @id @default(uuid()) @db.Uuid
+  documentVersionId String            @db.Uuid
+  documentVersion   DocumentVersion   @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  promptInstanceId  String            @db.Uuid
+  promptInstance    PromptInstance    @relation(fields: [promptInstanceId], references: [id])
+  status            AiAnalysisStatus  @default(PENDING)
+  outcome           AiAnalysisOutcome?
+  confidence        Float?
+  result            Json?
+  tokenUsage        Int?
+  estimatedCost     Decimal?          @db.Decimal(12, 4)
+  latencyMs         Int?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  reviews ReviewItem[]
+
+  @@index([documentVersionId, createdAt])
+  @@index([promptInstanceId, createdAt])
+  @@index([status, createdAt])
+  @@unique([documentVersionId, promptInstanceId])
+}
+
+model ReviewItem {
+  id                 String         @id @default(uuid()) @db.Uuid
+  reviewType         ReviewType
+  status             ReviewStatus   @default(PENDING)
+  outcome            ReviewOutcome?
+  aiAnalysisResultId String?        @db.Uuid
+  aiAnalysisResult   AiAnalysisResult? @relation(fields: [aiAnalysisResultId], references: [id])
+  complianceCheckId  String?        @db.Uuid
+  complianceCheck    ComplianceCheck? @relation(fields: [complianceCheckId], references: [id])
+  reviewerId         String?        @db.Uuid
+  roundNumber        Int            @default(1)
+  comment            String?
+  createdAt          DateTime       @default(now())
+  decidedAt          DateTime?
+
+  @@index([status, createdAt])
+  @@index([reviewerId, status, createdAt])
+  @@index([aiAnalysisResultId, roundNumber])
+  @@index([complianceCheckId, roundNumber])
+}
+
+model MasterRulebook {
+  id        String   @id @default(uuid()) @db.Uuid
+  title     String
+  domain    String
+  ownerId   String?  @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions MasterRulebookVersion[]
+}
+
+model MasterRulebookVersion {
+  id               String           @id @default(uuid()) @db.Uuid
+  masterRulebookId String           @db.Uuid
+  masterRulebook   MasterRulebook   @relation(fields: [masterRulebookId], references: [id], onDelete: Cascade)
+  versionNumber    Int
+  status           RulebookStatus   @default(DRAFT)
+  approvedById     String?          @db.Uuid
+  publishedById    String?          @db.Uuid
+  approvedAt       DateTime?
+  publishedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  rules RuleVersion[]
+  reports Report[]
+  complianceChecks ComplianceCheck[]
+
+  @@unique([masterRulebookId, versionNumber])
+  @@index([status, createdAt])
+}
+
+model RuleVersion {
+  id                    String                @id @default(uuid()) @db.Uuid
+  masterRulebookVersionId String              @db.Uuid
+  masterRulebookVersion MasterRulebookVersion @relation(fields: [masterRulebookVersionId], references: [id], onDelete: Cascade)
+  ruleCode              String
+  variantGroupId        String?
+  category              String?
+  title                 String
+  description           String
+  condition             String?
+  prohibition           String?
+  riskLevel             RiskLevel             @default(INFO)
+  sourceReferences      Json
+  examples              Json?
+  requiresReReview      Boolean               @default(false)
+  createdAt             DateTime              @default(now())
+
+  @@unique([masterRulebookVersionId, ruleCode])
+  @@index([variantGroupId])
+  @@index([riskLevel])
+  @@index([requiresReReview])
+}
+
+model ComplianceCheck {
+  id                      String                @id @default(uuid()) @db.Uuid
+  inputType               ComplianceInputType
+  status                  ComplianceCheckStatus @default(PENDING)
+  selectedRulebookVersionId String?             @db.Uuid
+  selectedRulebookVersion MasterRulebookVersion? @relation(fields: [selectedRulebookVersionId], references: [id])
+  selectedReportId        String?               @db.Uuid
+  createdById             String?               @db.Uuid
+  inputHash               String?
+  extractedContentHash    String?
+  metadata                Json?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+
+  results ComplianceCheckResult[]
+  reviews ReviewItem[]
+  reports Report[]
+
+  @@index([status, createdAt])
+  @@index([selectedRulebookVersionId, createdAt])
+  @@index([selectedReportId, createdAt])
+}
+
+model ComplianceCheckResult {
+  id                String                @id @default(uuid()) @db.Uuid
+  complianceCheckId String                @db.Uuid
+  complianceCheck   ComplianceCheck       @relation(fields: [complianceCheckId], references: [id], onDelete: Cascade)
+  versionNumber     Int                   @default(1)
+  status            ComplianceCheckStatus
+  summary           String?
+  matchedRules      Json?
+  ambiguousPoints   Json?
+  recommendedAction String?
+  reviewerDecision  ReviewOutcome?
+  notificationSent  Boolean               @default(false)
+  createdAt         DateTime              @default(now())
+
+  @@unique([complianceCheckId, versionNumber])
+  @@index([status, createdAt])
+}
+
+model Report {
+  id                String       @id @default(uuid()) @db.Uuid
+  reportType        ReportType
+  status            ReportStatus @default(DRAFT)
+  title             String
+  masterRulebookVersionId String? @db.Uuid
+  masterRulebookVersion MasterRulebookVersion? @relation(fields: [masterRulebookVersionId], references: [id])
+  complianceCheckId String?      @db.Uuid
+  complianceCheck   ComplianceCheck? @relation(fields: [complianceCheckId], references: [id])
+  parameters        Json?
+  generatedById     String?      @db.Uuid
+  generatedAt       DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  exports ReportExport[]
+
+  @@index([reportType, status, createdAt])
+  @@index([masterRulebookVersionId, createdAt])
+  @@index([complianceCheckId, createdAt])
+}
+
+model ReportExport {
+  id             String       @id @default(uuid()) @db.Uuid
+  reportId       String       @db.Uuid
+  report         Report       @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  format         ExportFormat
+  status         ExportStatus @default(QUEUED)
+  storedObjectId String?      @db.Uuid
+  parametersHash String?
+  failureReason  String?
+  createdAt      DateTime     @default(now())
+  completedAt    DateTime?
+
+  @@index([reportId, createdAt])
+  @@index([status, createdAt])
+  @@unique([reportId, format, parametersHash])
+}
+
+model StoredObject {
+  id              String                      @id @default(uuid()) @db.Uuid
+  bucket          String
+  objectKey       String
+  fileName        String?
+  contentType     String
+  byteSize        BigInt
+  sha256          String
+  ownerType       String
+  ownerId         String                      @db.Uuid
+  lifecycleStatus StoredObjectLifecycleStatus @default(CURRENT)
+  metadata        Json?
+  createdAt       DateTime                    @default(now())
+
+  @@unique([bucket, objectKey])
+  @@index([ownerType, ownerId])
+  @@index([sha256])
+  @@index([lifecycleStatus, createdAt])
+}
+
+model AuditLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  actorId         String?  @db.Uuid
+  actorType       String   @default("USER")
+  action          String
+  entityType      String
+  entityId        String   @db.Uuid
+  previousState   Json?
+  nextState       Json?
+  correlationId   String
+  requestMetadata Json?
+  reason          String?
+  createdAt       DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([correlationId])
+  @@index([action, createdAt])
+}

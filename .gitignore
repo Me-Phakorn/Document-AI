@@ -1,0 +1,17 @@
+node_modules/
+.pnpm-store/
+.turbo/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+back-end/prisma/migrations/*/migration_lock.toml
+back-end/generated/
+
+.DS_Store
+Thumbs.db

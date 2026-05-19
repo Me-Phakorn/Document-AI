@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DocAI · Review Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans Thai', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f6f7fb;
+      --panel:     #ffffff;
+      --raised:    #f0f3f8;
+      --border:    #e1e6ef;
+      --ghost:     #cbd4e2;
+      --t1:        #172033;
+      --t2:        #596579;
+      --t3:        #8a95a8;
+      --accent:    #4f46e5;
+      --accent-lo: rgba(79,70,229,0.10);
+      --green:     #168a4a;
+      --amber:     #b56a09;
+      --red:       #cf2e35;
+      --blue:      #2563eb;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--t1);
+      font-family: 'Inter', 'Noto Sans Thai', system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── App shell grid ───────────────────────────────────────── */
+    #app {
+      display: grid;
+      grid-template-rows: 44px 1fr;
+      grid-template-columns: 52px 296px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── Topbar ────────────────────────────────────────────────── */
+    #topbar {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      display: flex;
+      align-items: center;
+      padding: 0 14px 0 10px;
+      gap: 2px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .logo-mark {
+      width: 26px; height: 26px;
+      background: var(--accent);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .nav-tab {
+      padding: 5px 9px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      color: var(--t2);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.1s, color 0.1s;
+    }
+    .nav-tab:hover { background: var(--raised); color: var(--t1); }
+    .nav-tab.active { color: var(--t1); background: var(--raised); }
+
+    .badge-count {
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: var(--accent-lo);
+      color: var(--accent);
+      margin-left: 3px;
+    }
+
+    .icon-btn {
+      width: 30px; height: 30px;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--t2);
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+    .icon-btn:hover { background: var(--raised); color: var(--t1); }
+
+    /* ─── Icon rail ─────────────────────────────────────────────── */
+    #icon-rail {
+      grid-column: 1;
+      grid-row: 2;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 0;
+      gap: 1px;
+    }
+
+    .rail-btn {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--t2);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.1s, color 0.1s;
+    }
+    .rail-btn:hover { background: var(--raised); color: var(--t1); }
+    .rail-btn.active { background: var(--accent-lo); color: var(--accent); }
+    .rail-btn .notif-dot {
+      position: absolute;
+      top: 5px; right: 5px;
+      width: 5px; height: 5px;
+      background: var(--red);
+      border-radius: 50%;
+      border: 1.5px solid var(--panel);
+    }
+
+    /* ─── List panel ────────────────────────────────────────────── */
+    #list-panel {
+      grid-column: 2;
+      grid-row: 2;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-hdr {
+      padding: 9px 10px 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 4px;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .pill {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+    .pill.active { background: var(--accent-lo); color: var(--accent); }
+    .pill:not(.active) { color: var(--t2); background: var(--raised); }
+
+    .queue-list { overflow-y: auto; flex: 1; }
+
+    /* ─── Queue item ────────────────────────────────────────────── */
+    .qi {
+      padding: 9px 10px 9px 13px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.1s;
+    }
+    .qi:hover { background: var(--raised); }
+    .qi.sel   { background: var(--raised); }
+
+    /* left risk bar */
+    .qi::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 0 2px 2px 0;
+    }
+    .qi.rh::before { background: var(--red); }
+    .qi.rm::before { background: var(--amber); }
+    .qi.rl::before { background: var(--green); }
+    .qi.ri::before { background: var(--blue); }
+
+    /* selected right accent */
+    .qi.sel::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--accent);
+      border-radius: 1px 0 0 1px;
+    }
+
+    /* ─── Tag / badge ───────────────────────────────────────────── */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-weight: 500;
+      border: 1px solid;
+      line-height: 1.4;
+    }
+    .t-red    { color: var(--red);   border-color: rgba(248,113,113,.22); background: rgba(248,113,113,.08); }
+    .t-amber  { color: var(--amber); border-color: rgba(251,191,36,.22);  background: rgba(251,191,36,.08); }
+    .t-green  { color: var(--green); border-color: rgba(74,222,128,.22);  background: rgba(74,222,128,.08); }
+    .t-blue   { color: var(--blue);  border-color: rgba(96,165,250,.22);  background: rgba(96,165,250,.08); }
+    .t-violet { color: var(--accent);border-color: rgba(124,92,252,.22);  background: var(--accent-lo); }
+    .t-ghost  { color: var(--t2);    border-color: var(--border);          background: transparent; }
+
+    /* ─── Status dot ────────────────────────────────────────────── */
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+    .dot-live { animation: pulse 2s ease-in-out infinite; }
+
+    /* ─── Detail panel ──────────────────────────────────────────── */
+    #detail-panel {
+      grid-column: 3;
+      grid-row: 2;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* subtle dot grid on detail bg */
+    #detail-panel {
+      background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+      background-size: 20px 20px;
+      background-position: 0 0;
+      background-color: var(--bg);
+    }
+
+    #detail-hdr {
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    /* pipeline strip */
+    .pipe-stage {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--t3);
+    }
+    .pipe-stage.done   { color: var(--t2); }
+    .pipe-stage.active { color: var(--accent); }
+    .pipe-seg {
+      width: 18px; height: 1px;
+      background: var(--border);
+    }
+    .pipe-seg.done { background: var(--t3); }
+
+    /* ─── Workspace: OCR | Findings ─────────────────────────────── */
+    #workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .ws-pane {
+      overflow-y: auto;
+      padding: 14px 16px;
+      background: var(--bg);
+    }
+    .ws-pane:first-child {
+      border-right: 1px solid var(--border);
+    }
+
+    .pane-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--t3);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 10px;
+    }
+
+    .ocr-body {
+      font-family: 'Noto Sans Thai', 'Inter', sans-serif;
+      font-size: 12.5px;
+      line-height: 1.75;
+      color: var(--t2);
+    }
+
+    /* ─── Finding card ──────────────────────────────────────────── */
+    .finding {
+      padding: 10px 11px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--raised);
+      margin-bottom: 7px;
+      transition: border-color .1s;
+    }
+    .finding:hover { border-color: var(--ghost); }
+    .finding.f-hi { border-left: 3px solid var(--red); }
+    .finding.f-md { border-left: 3px solid var(--amber); }
+    .finding.f-lo { border-left: 3px solid var(--green); }
+    .finding.accepted { opacity: .55; pointer-events: none; }
+
+    /* ─── Not Relevant queue item ──────────────────────────────── */
+    .qi.rn { opacity: .65; }
+    .qi.rn::before { background: var(--t3); }
+    .qi.rn.sel { opacity: 1; }
+    .t-nr { color: var(--t2); border-color: var(--border); background: var(--raised); }
+
+    /* ─── Not Relevant workspace view ──────────────────────────── */
+    #workspace-nr {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 28px 32px;
+      justify-content: center;
+    }
+    #workspace-nr .nr-inner {
+      max-width: 600px;
+      width: 100%;
+    }
+    .nr-reason {
+      padding: 9px 12px;
+      background: var(--raised);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--t2);
+      line-height: 1.65;
+      margin-bottom: 6px;
+    }
+
+    /* ─── Action bar ────────────────────────────────────────────── */
+    #action-bar-normal, #action-bar-nr {
+      border-top: 1px solid var(--border);
+      padding: 9px 16px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--panel);
+      flex-shrink: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 11px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all .1s;
+      line-height: 1;
+    }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-outline { background: transparent; color: var(--t1); border-color: var(--border); }
+    .btn-outline:hover { background: var(--raised); border-color: var(--ghost); }
+    .btn-danger  { background: transparent; color: var(--red); border-color: rgba(248,113,113,.3); }
+    .btn-danger:hover { background: rgba(248,113,113,.08); }
+
+    .vr { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
+
+    /* ─── Scrollbars ────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--ghost); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--t3); }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ════════════════════════════════════════════════════════════
+       TOP BAR
+  ════════════════════════════════════════════════════════════════ -->
+  <header id="topbar">
+
+    <!-- Logo -->
+    <div style="display:flex;align-items:center;gap:7px;margin-right:14px;">
+      <div class="logo-mark">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <rect x="2" y="2" width="5" height="5" rx="1" fill="white" opacity=".9"/>
+          <rect x="9" y="2" width="5" height="5" rx="1" fill="white" opacity=".6"/>
+          <rect x="2" y="9" width="5" height="5" rx="1" fill="white" opacity=".6"/>
+          <rect x="9" y="9" width="5" height="5" rx="1" fill="white" opacity=".3"/>
+        </svg>
+      </div>
+      <span style="font-weight:650;font-size:13.5px;letter-spacing:-.025em;color:var(--t1);">DocAI</span>
+      <span style="width:1px;height:16px;background:var(--border);margin:0 2px;"></span>
+    </div>
+
+    <!-- Primary nav -->
+    <div style="display:flex;align-items:center;gap:1px;">
+      <div class="nav-tab">Inbox <span class="badge-count">3</span></div>
+      <div class="nav-tab">Documents</div>
+      <div class="nav-tab active">Review</div>
+      <div class="nav-tab">Compliance</div>
+      <div class="nav-tab">Rulebook</div>
+      <div class="nav-tab">Reports</div>
+    </div>
+
+    <div style="flex:1;"></div>
+
+    <!-- Right controls -->
+    <div style="display:flex;align-items:center;gap:5px;">
+      <!-- Search -->
+      <div style="display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--raised);border:1px solid var(--border);border-radius:6px;color:var(--t2);cursor:text;font-size:12px;min-width:160px;">
+        <i data-lucide="search" style="width:12px;height:12px;flex-shrink:0;"></i>
+        <span style="flex:1;">Search...</span>
+        <kbd style="font-size:10px;padding:0 4px;border:1px solid var(--border);border-radius:3px;color:var(--t3);font-family:monospace;line-height:1.5;">⌘K</kbd>
+      </div>
+      <!-- Bell -->
+      <div class="icon-btn" style="position:relative;">
+        <i data-lucide="bell" style="width:14px;height:14px;"></i>
+        <div style="position:absolute;top:5px;right:5px;width:6px;height:6px;background:var(--red);border-radius:50%;border:1.5px solid var(--panel);"></div>
+      </div>
+      <!-- Avatar -->
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c5cfc,#c084fc);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;cursor:pointer;letter-spacing:0;">P</div>
+    </div>
+  </header>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       ICON RAIL
+  ════════════════════════════════════════════════════════════════ -->
+  <nav id="icon-rail">
+    <div class="rail-btn active" title="Review">
+      <i data-lucide="clipboard-check" style="width:15px;height:15px;"></i>
+    </div>
+    <div class="rail-btn" title="Documents" style="position:relative;">
+      <i data-lucide="files" style="width:15px;height:15px;"></i>
+      <div class="notif-dot"></div>
+    </div>
+    <div class="rail-btn" title="Crawler">
+      <i data-lucide="globe" style="width:15px;height:15px;"></i>
+    </div>
+    <div class="rail-btn" title="AI Analysis">
+      <i data-lucide="brain-circuit" style="width:15px;height:15px;"></i>
+    </div>
+    <div class="rail-btn" title="Rulebook">
+      <i data-lucide="book-open" style="width:15px;height:15px;"></i>
+    </div>
+    <div class="rail-btn" title="Compliance">
+      <i data-lucide="shield-check" style="width:15px;height:15px;"></i>
+    </div>
+    <div style="flex:1;"></div>
+    <div class="rail-btn" title="Audit Log">
+      <i data-lucide="scroll-text" style="width:15px;height:15px;"></i>
+    </div>
+    <div class="rail-btn" title="Settings">
+      <i data-lucide="settings" style="width:15px;height:15px;"></i>
+    </div>
+  </nav>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       LIST PANEL — Review Queue
+  ════════════════════════════════════════════════════════════════ -->
+  <aside id="list-panel">
+
+    <!-- Panel header -->
+    <div class="panel-hdr">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-weight:600;font-size:12.5px;color:var(--t1);">Review Queue</span>
+        <span class="badge-count" id="queue-count">9</span>
+      </div>
+      <div style="display:flex;gap:3px;">
+        <div class="icon-btn" style="width:26px;height:26px;" title="Filter">
+          <i data-lucide="sliders-horizontal" style="width:12px;height:12px;"></i>
+        </div>
+        <div class="icon-btn" style="width:26px;height:26px;" title="Sort">
+          <i data-lucide="arrow-up-down" style="width:12px;height:12px;"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stage filter pills -->
+    <div class="filter-pills">
+      <div class="pill active">All</div>
+      <div class="pill">AI Done</div>
+      <div class="pill">Pending</div>
+      <div class="pill">Escalated</div>
+      <div class="pill" style="color:var(--t3);">Not Relevant</div>
+    </div>
+
+    <!-- Queue items -->
+    <div class="queue-list">
+
+      <!-- ① selected / high risk -->
+      <div class="qi rh sel">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;">
+          <span style="font-weight:500;font-size:12.5px;color:var(--t1);line-height:1.4;flex:1;min-width:0;">ประกาศ ธปท.นว.(ว) 8/2567 สินเชื่อความเสี่ยงสูง</span>
+          <span style="font-size:10.5px;color:var(--t2);flex-shrink:0;margin-top:2px;font-variant-numeric:tabular-nums;">2h</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="tag t-red">High</span>
+          <span class="tag t-ghost">BOT</span>
+          <span class="tag t-amber">In Review</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">2847</span>
+        </div>
+      </div>
+
+      <!-- ② medium -->
+      <div class="qi rm">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;">
+          <span style="font-weight:500;font-size:12.5px;color:var(--t1);line-height:1.4;flex:1;min-width:0;">หลักเกณฑ์สินเชื่อส่วนบุคคลภายใต้กำกับ ฉบับแก้ไข</span>
+          <span style="font-size:10.5px;color:var(--t2);flex-shrink:0;margin-top:2px;">5h</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="tag t-amber">Med</span>
+          <span class="tag t-ghost">BOT</span>
+          <span class="tag t-blue">AI Done</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">2846</span>
+        </div>
+      </div>
+
+      <!-- ③ medium / English -->
+      <div class="qi rm">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;">
+          <span style="font-weight:500;font-size:12.5px;color:var(--t1);line-height:1.4;flex:1;min-width:0;">SEC Circular CSRC 17/2567 — AML Requirements</span>
+          <span style="font-size:10.5px;color:var(--t2);flex-shrink:0;margin-top:2px;">1d</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="tag t-amber">Med</span>
+          <span class="tag t-ghost">SEC</span>
+          <span class="tag t-blue">AI Done</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">2845</span>
+        </div>
+      </div>
+
+      <!-- ④ low -->
+      <div class="qi rl">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;">
+          <span style="font-weight:500;font-size:12.5px;color:var(--t1);line-height:1.4;flex:1;min-width:0;">แนวทาง PDPA สำหรับสถาบันการเงิน ฉบับปรับปรุง 2567</span>
+          <span style="font-size:10.5px;color:var(--t2);flex-shrink:0;margin-top:2px;">1d</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="tag t-green">Low</span>
+          <span class="tag t-ghost">OIC</span>
+          <span class="tag t-blue">AI Done</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">2844</span>
+        </div>
+      </div>
+
+      <!-- ⑤ info -->
+      <div class="qi ri">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;">
+          <span style="font-weight:500;font-size:12.5px;color:var(--t1);line-height:1.4;flex:1;min-width:0;">ประกาศ ก.ล.ต. กน.กด. 2/2567 กองทุนรวม ESG</span>
+          <span style="font-size:10.5px;color:var(--t2);flex-shrink:0;margin-top:2px;">2d</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="tag t-blue">Info</span>
+          <span class="tag t-ghost">SEC</span>
+          <span class="tag t-ghost">OCR Done</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">2843</span>
+        </div>
+      </div>
+
+      <!-- ⑥ high risk -->
+      <div class="qi rh">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;">
+          <span style="font-weight:500;font-size:12.5px;color:var(--t1);line-height:1.4;flex:1;min-width:0;">Basel III Capital Requirements — Implementation Notice</span>
+          <span style="font-size:10.5px;color:var(--t2);flex-shrink:0;margin-top:2px;">3d</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="tag t-red">High</span>
+          <span class="tag t-ghost">BOT</span>
+          <span class="tag t-amber">In Review</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">2842</span>
+        </div>
+      </div>
+
+      <!-- ⑦ low -->
+      <div class="qi rl">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;">
+          <span style="font-weight:500;font-size:12.5px;color:var(--t1);line-height:1.4;flex:1;min-width:0;">ระเบียบ SET เรื่องการเปิดเผยข้อมูลบริษัทจดทะเบียน 2567</span>
+          <span style="font-size:10.5px;color:var(--t2);flex-shrink:0;margin-top:2px;">3d</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="tag t-green">Low</span>
+          <span class="tag t-ghost">SET</span>
+          <span class="tag t-ghost">OCR Done</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">2841</span>
+        </div>
+      </div>
+
+      <!-- ⑧ not relevant ① -->  
+      <div class="qi rn" data-type="nr">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;">
+          <span style="font-weight:500;font-size:12.5px;color:var(--t1);line-height:1.4;flex:1;min-width:0;">รางวัลสถาบันการเงินดีเด่นด้านการบริการลูกค้า ประจำปี 2567</span>
+          <span style="font-size:10.5px;color:var(--t2);flex-shrink:0;margin-top:2px;">4d</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="tag t-nr" style="display:inline-flex;align-items:center;gap:3px;"><i data-lucide="circle-slash" style="width:9px;height:9px;"></i>Not Relevant</span>
+          <span class="tag t-ghost">BOT</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">2840</span>
+        </div>
+      </div>
+
+      <!-- ⑨ not relevant ② -->
+      <div class="qi rn" data-type="nr">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;">
+          <span style="font-weight:500;font-size:12.5px;color:var(--t1);line-height:1.4;flex:1;min-width:0;">ข่าว ธปท. ฉบับที่ 22/2567 แถลงผลการดำเนินงานสถาบันการเงิน</span>
+          <span style="font-size:10.5px;color:var(--t2);flex-shrink:0;margin-top:2px;">5d</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="tag t-nr" style="display:inline-flex;align-items:center;gap:3px;"><i data-lucide="circle-slash" style="width:9px;height:9px;"></i>Not Relevant</span>
+          <span class="tag t-ghost">BOT</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">2839</span>
+        </div>
+      </div>
+
+    </div><!-- /queue-list -->
+  </aside>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       DETAIL PANEL
+  ════════════════════════════════════════════════════════════════ -->
+  <main id="detail-panel">
+
+    <!-- Document header -->
+    <div id="detail-hdr">
+
+      <!-- Breadcrumb row -->
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px;">
+        <span style="color:var(--t3);font-size:11px;">Review</span>
+        <i data-lucide="chevron-right" style="width:10px;height:10px;color:var(--t3);"></i>
+        <span style="color:var(--t2);font-size:11px;">BOT</span>
+        <i data-lucide="chevron-right" style="width:10px;height:10px;color:var(--t3);"></i>
+        <span style="font-size:11px;color:var(--t2);font-family:'JetBrains Mono',monospace;">DOC-2847</span>
+        <div style="flex:1;"></div>
+        <div class="icon-btn" style="width:26px;height:26px;" title="Open source PDF">
+          <i data-lucide="external-link" style="width:12px;height:12px;"></i>
+        </div>
+        <div class="icon-btn" style="width:26px;height:26px;" title="More actions">
+          <i data-lucide="more-horizontal" style="width:12px;height:12px;"></i>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <h1 style="font-size:14.5px;font-weight:600;color:var(--t1);line-height:1.45;margin-bottom:9px;">
+        ประกาศธนาคารแห่งประเทศไทย ที่ ธปท.นว.(ว) 8/2567
+        <br>
+        <span style="font-size:12.5px;font-weight:400;color:var(--t2);">การกำกับดูแลสินเชื่อที่มีความเสี่ยงสูงในระบบสถาบันการเงิน</span>
+      </h1>
+
+      <!-- Meta row -->
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:11px;">
+        <span class="tag t-red">⚠ High Risk</span>
+        <span class="tag t-ghost">BOT</span>
+        <span class="tag t-ghost">Banking &amp; Lending</span>
+        <span class="tag t-ghost">Circular</span>
+        <span class="tag t-ghost">47 pp</span>
+
+        <div style="width:1px;height:14px;background:var(--border);"></div>
+
+        <span style="font-size:11px;color:var(--t2);">ประกาศ 15 ม.ค. 2567</span>
+        <span style="font-size:11px;color:var(--t3);">·</span>
+        <span style="font-size:11px;color:var(--t2);">มีผล 1 เม.ย. 2567</span>
+
+        <div style="width:1px;height:14px;background:var(--border);"></div>
+
+        <!-- OCR quality mini-bar -->
+        <div style="display:flex;align-items:center;gap:5px;">
+          <span style="font-size:10.5px;color:var(--t3);">OCR</span>
+          <div style="width:44px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;">
+            <div style="width:87%;height:100%;background:var(--green);border-radius:2px;"></div>
+          </div>
+          <span style="font-size:10.5px;color:var(--t2);font-family:'JetBrains Mono',monospace;">87%</span>
+        </div>
+
+        <div style="width:1px;height:14px;background:var(--border);"></div>
+
+        <!-- Assignee -->
+        <div style="display:flex;align-items:center;gap:5px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#4ade80,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;">S</div>
+          <span style="font-size:11px;color:var(--t2);">Somchai R.</span>
+        </div>
+      </div>
+
+      <!-- Pipeline strip -->
+      <div style="display:flex;align-items:center;gap:0;padding-top:10px;border-top:1px solid var(--border);">
+        <div class="pipe-stage done">
+          <div class="dot" style="background:var(--t3);"></div>Crawled
+        </div>
+        <div class="pipe-seg done"></div>
+        <div class="pipe-stage done">
+          <div class="dot" style="background:var(--t3);"></div>OCR
+        </div>
+        <div class="pipe-seg done"></div>
+        <div class="pipe-stage done">
+          <div class="dot" style="background:var(--t3);"></div>AI Analysis
+        </div>
+        <div class="pipe-seg done"></div>
+        <div class="pipe-stage active">
+          <div class="dot dot-live" style="background:var(--accent);border-radius:50%;width:6px;height:6px;"></div>Review
+        </div>
+        <div class="pipe-seg"></div>
+        <div class="pipe-stage">
+          <div class="dot" style="background:var(--border);"></div>Rulebook
+        </div>
+        <div class="pipe-seg"></div>
+        <div class="pipe-stage">
+          <div class="dot" style="background:var(--border);"></div>Published
+        </div>
+      </div>
+    </div><!-- /detail-hdr -->
+
+
+    <!-- ── Workspace: OCR text (left) | AI findings (right) ──── -->
+    <div id="workspace">
+
+      <!-- OCR Pane -->
+      <div class="ws-pane">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="pane-label">
+            <i data-lucide="file-text" style="width:12px;height:12px;"></i>
+            OCR Text
+          </div>
+          <div style="display:flex;gap:3px;">
+            <div class="icon-btn" style="width:24px;height:24px;" title="Copy text">
+              <i data-lucide="copy" style="width:11px;height:11px;"></i>
+            </div>
+            <div class="icon-btn" style="width:24px;height:24px;" title="Expand">
+              <i data-lucide="maximize-2" style="width:11px;height:11px;"></i>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-family:'Noto Sans Thai','Inter',sans-serif;font-size:12.5px;line-height:1.8;color:var(--t2);">
+          <p style="margin-bottom:12px;font-weight:600;color:var(--t1);font-size:13px;line-height:1.5;">
+            ประกาศธนาคารแห่งประเทศไทย<br>
+            ที่ ธปท.นว.(ว) 8/2567<br>
+            เรื่อง การกำกับดูแลสินเชื่อที่มีความเสี่ยงสูง
+          </p>
+
+          <p style="margin-bottom:10px;">อาศัยอำนาจตามความในมาตรา 29 มาตรา 35 และมาตรา 36 แห่งพระราชบัญญัติธุรกิจสถาบันการเงิน พ.ศ. 2551 ธนาคารแห่งประเทศไทยออกประกาศไว้ดังนี้</p>
+
+          <p style="margin-bottom:8px;"><span style="font-weight:600;color:var(--t1);">ข้อ 1.</span> ประกาศนี้ให้ใช้บังคับตั้งแต่วันที่ 1 เมษายน พ.ศ. 2567 เป็นต้นไป</p>
+
+          <p style="margin-bottom:8px;"><span style="font-weight:600;color:var(--t1);">ข้อ 2.</span> ในประกาศนี้ "สินเชื่อที่มีความเสี่ยงสูง" หมายความว่า สินเชื่อที่มีอัตราส่วนภาระหนี้ต่อรายได้ (DSR) เกินกว่าร้อยละ 70 ของรายได้สุทธิต่อเดือน</p>
+
+          <p style="margin-bottom:8px;"><span style="font-weight:600;color:var(--t1);">ข้อ 3.</span> สถาบันการเงินต้องดำเนินการดังนี้</p>
+          <p style="margin-bottom:5px;padding-left:14px;">(1) กำหนดนโยบายและกระบวนการพิจารณาสินเชื่อที่ชัดเจน</p>
+          <p style="margin-bottom:5px;padding-left:14px;">(2) คำนวณและติดตามอัตราส่วน DSR ของลูกค้าแต่ละรายอย่างต่อเนื่อง</p>
+          <p style="margin-bottom:5px;padding-left:14px;">(3) จัดทำรายงานสรุปส่งให้ ธปท. ทุกไตรมาส</p>
+
+          <p style="margin-bottom:8px;"><span style="font-weight:600;color:var(--t1);">ข้อ 4.</span> สถาบันการเงินต้องดำรงอัตราส่วนสำรองหนี้เสียสำหรับสินเชื่อความเสี่ยงสูงไม่ต่ำกว่าร้อยละ 5 ของยอดสินเชื่อคงค้าง…</p>
+
+          <div style="height:1px;background:var(--border);margin:14px 0;"></div>
+          <p style="font-size:10.5px;color:var(--t3);font-family:'JetBrains Mono',monospace;">p.1 / 47 · confidence 87% · extracted 19 May 2026 08:41</p>
+        </div>
+      </div>
+
+      <!-- AI Findings Pane -->
+      <div class="ws-pane">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="pane-label">
+            <i data-lucide="sparkles" style="width:12px;height:12px;color:var(--accent);"></i>
+            <span style="color:var(--accent);">AI Findings</span>
+            <span class="badge-count" style="margin-left:2px;">6</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:10.5px;color:var(--t3);font-family:'JetBrains Mono',monospace;">GPT-4o · 1.2s</span>
+            <div class="icon-btn" style="width:24px;height:24px;" title="Re-run analysis">
+              <i data-lucide="refresh-cw" style="width:11px;height:11px;"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Finding ① -->
+        <div class="finding f-hi">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;">
+              <span class="tag t-red" style="flex-shrink:0;">High</span>
+              <span style="font-size:12px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">DSR Threshold — 70% Cap</span>
+            </div>
+            <div style="display:flex;gap:2px;flex-shrink:0;">
+              <div class="icon-btn" style="width:22px;height:22px;" title="Accept">
+                <i data-lucide="check" style="width:11px;height:11px;color:var(--green);"></i>
+              </div>
+              <div class="icon-btn" style="width:22px;height:22px;" title="Flag">
+                <i data-lucide="flag" style="width:11px;height:11px;"></i>
+              </div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:6px;">ข้อ 2 กำหนดเพดาน DSR 70% ของรายได้สุทธิ สถาบันการเงินต้องปรับระบบคำนวณสินเชื่อและ onboarding flow ภายใน 90 วัน</p>
+          <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;">
+            <span style="color:var(--t3);">อ้างอิง</span>
+            <span style="color:var(--accent);cursor:pointer;font-family:'JetBrains Mono',monospace;">§ข้อ 2</span>
+            <span style="color:var(--t3);">·</span>
+            <span style="color:var(--t3);">confidence 96%</span>
+          </div>
+        </div>
+
+        <!-- Finding ② -->
+        <div class="finding f-hi">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;">
+              <span class="tag t-red" style="flex-shrink:0;">High</span>
+              <span style="font-size:12px;font-weight:600;color:var(--t1);">Quarterly Reporting to BOT</span>
+            </div>
+            <div style="display:flex;gap:2px;flex-shrink:0;">
+              <div class="icon-btn" style="width:22px;height:22px;"><i data-lucide="check" style="width:11px;height:11px;color:var(--green);"></i></div>
+              <div class="icon-btn" style="width:22px;height:22px;"><i data-lucide="flag" style="width:11px;height:11px;"></i></div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:6px;">ข้อ 3(3) ต้องส่งรายงานสินเชื่อความเสี่ยงสูงต่อ ธปท. ทุกไตรมาส ต้องปรับปรุงระบบ MIS และ report template ใหม่</p>
+          <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;">
+            <span style="color:var(--t3);">อ้างอิง</span>
+            <span style="color:var(--accent);cursor:pointer;font-family:'JetBrains Mono',monospace;">§ข้อ 3(3)</span>
+            <span style="color:var(--t3);">·</span>
+            <span style="color:var(--t3);">confidence 98%</span>
+          </div>
+        </div>
+
+        <!-- Finding ③ -->
+        <div class="finding f-md">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;">
+              <span class="tag t-amber" style="flex-shrink:0;">Med</span>
+              <span style="font-size:12px;font-weight:600;color:var(--t1);">Loan Loss Reserve ≥ 5%</span>
+            </div>
+            <div style="display:flex;gap:2px;flex-shrink:0;">
+              <div class="icon-btn" style="width:22px;height:22px;"><i data-lucide="check" style="width:11px;height:11px;color:var(--green);"></i></div>
+              <div class="icon-btn" style="width:22px;height:22px;"><i data-lucide="flag" style="width:11px;height:11px;"></i></div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:6px;">ข้อ 4 กำหนดสำรองหนี้เสียขั้นต่ำ 5% ของยอดสินเชื่อความเสี่ยงสูงคงค้าง อาจต้องปรับ capital allocation ภายใน Q2</p>
+          <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;">
+            <span style="color:var(--t3);">อ้างอิง</span>
+            <span style="color:var(--accent);cursor:pointer;font-family:'JetBrains Mono',monospace;">§ข้อ 4</span>
+            <span style="color:var(--t3);">·</span>
+            <span style="color:var(--t3);">confidence 91%</span>
+          </div>
+        </div>
+
+        <!-- Finding ④ accepted -->
+        <div class="finding f-lo accepted">
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
+            <span class="tag t-green" style="flex-shrink:0;">Low</span>
+            <span style="font-size:12px;font-weight:600;color:var(--t1);">Internal Policy Documentation</span>
+            <span style="font-size:10.5px;color:var(--green);margin-left:4px;font-family:'JetBrains Mono',monospace;">✓ accepted</span>
+          </div>
+          <p style="font-size:12px;color:var(--t2);line-height:1.6;">ข้อ 3(1) ให้จัดทำนโยบายพิจารณาสินเชื่อที่ชัดเจน — สอดคล้องกับนโยบายที่มีอยู่แล้ว ไม่ต้องปรับ</p>
+        </div>
+
+        <!-- Reviewer note -->
+        <div style="margin-top:6px;padding:9px 11px;background:var(--raised);border:1px solid var(--border);border-radius:6px;">
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;">
+            <i data-lucide="message-square-plus" style="width:12px;height:12px;color:var(--t2);"></i>
+            <span style="font-size:11.5px;color:var(--t2);font-weight:500;">Reviewer note</span>
+          </div>
+          <div style="font-size:12px;color:var(--t3);font-style:italic;cursor:text;">Add a note for the compliance team...</div>
+        </div>
+
+      </div><!-- /findings -->
+    </div><!-- /workspace -->
+
+
+    <!-- ── Not Relevant workspace view ─────────────────────────── -->
+    <div id="workspace-nr">
+      <div class="nr-inner">
+
+        <!-- AI determination callout -->
+        <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:18px;">
+          <div style="padding:11px 15px;background:var(--raised);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+            <i data-lucide="circle-slash" style="width:16px;height:16px;color:var(--t2);"></i>
+            <span style="font-size:13px;font-weight:600;color:var(--t1);">เอกสารไม่เกี่ยวข้องกับ Rule ที่ตรวจสอบ</span>
+            <span class="tag t-nr" style="margin-left:auto;">Not Relevant</span>
+          </div>
+          <div style="padding:14px 16px;">
+            <p style="font-size:12.5px;color:var(--t2);line-height:1.65;margin-bottom:14px;">AI ตรวจเอกสารเทียบกับ <strong style="color:var(--t1);">8 compliance domains</strong> และพบว่าไม่มีข้อบังคับ คำสั่ง หรือบทลงโทษใดที่เกี่ยวข้อง เอกสารนี้คือสิ่งพิมพ์ PR / เกียรติคุณ ไม่ใช่ระเบียบข้อบังคับ</p>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;">
+                <i data-lucide="x" style="width:11px;height:11px;color:var(--t3);flex-shrink:0;"></i>
+                <span style="color:var(--t2);">Banking &amp; Lending Regulations</span>
+                <span style="color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">0 matches</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;">
+                <i data-lucide="x" style="width:11px;height:11px;color:var(--t3);flex-shrink:0;"></i>
+                <span style="color:var(--t2);">Capital &amp; Liquidity Requirements</span>
+                <span style="color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">0 matches</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;">
+                <i data-lucide="x" style="width:11px;height:11px;color:var(--t3);flex-shrink:0;"></i>
+                <span style="color:var(--t2);">Anti-Money Laundering (AML/CFT)</span>
+                <span style="color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">0 matches</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;">
+                <i data-lucide="x" style="width:11px;height:11px;color:var(--t3);flex-shrink:0;"></i>
+                <span style="color:var(--t2);">Consumer Data &amp; PDPA</span>
+                <span style="color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">0 matches</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;">
+                <i data-lucide="x" style="width:11px;height:11px;color:var(--t3);flex-shrink:0;"></i>
+                <span style="color:var(--t2);">Securities &amp; Investment Products</span>
+                <span style="color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace;">0 matches</span>
+              </div>
+            </div>
+          </div>
+          <div style="padding:8px 16px;background:var(--raised);border-top:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+            <i data-lucide="sparkles" style="width:11px;height:11px;color:var(--accent);"></i>
+            <span style="font-size:10.5px;color:var(--t3);font-family:'JetBrains Mono',monospace;">GPT-4o · confidence 93% · analyzed 19 May 2026 11:22</span>
+          </div>
+        </div>
+
+        <!-- AI reasoning -->
+        <div style="margin-bottom:18px;">
+          <div style="font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">เหตุผลจาก AI</div>
+          <div class="nr-reason">
+            <span style="color:var(--t1);font-weight:500;">เนื้อหา: </span>เอกสารคือหนังสือมอบรางวัลสถาบันการเงินดีเด่นประจำปี 2567 ไม่มีข้อบังคับหรือคำสั่งที่กระทบ compliance obligations
+          </div>
+          <div class="nr-reason">
+            <span style="color:var(--t1);font-weight:500;">รูปแบบภาษา: </span>ไม่พบ keyword บ่งชี้ข้อบังคับ เช่น "ต้องดำเนินการ" "ให้ปฏิบัติ" "บทลงโทษ" "อัตราส่วน" "ข้อกำหนด"
+          </div>
+          <div class="nr-reason">
+            <span style="color:var(--t1);font-weight:500;">ประเภทเอกสาร: </span>จัดเป็น <em>"สิ่งพิมพ์ PR / เกียรติคุณ"</em> ซึ่ง auto-exclude ออกจาก compliance pipeline
+          </div>
+        </div>
+
+        <!-- OCR excerpt -->
+        <div>
+          <div style="font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">ตัวอย่างข้อความ OCR</div>
+          <div style="padding:12px 14px;background:var(--raised);border:1px solid var(--border);border-radius:6px;font-family:'Noto Sans Thai','Inter',sans-serif;font-size:12px;color:var(--t2);line-height:1.8;">
+            <span style="color:var(--t3);">…</span> ธนาคารแห่งประเทศไทยขอมอบ<span style="background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.2);padding:0 3px;border-radius:3px;color:var(--t1);">รางวัลสถาบันการเงินดีเด่นด้านการบริการลูกค้า</span>ประจำปี 2567 แก่ธนาคาร xxx จำกัด (มหาชน) เพื่อยกย่องมาตรฐานการให้บริการที่ดีแก่ประชาชน <span style="color:var(--t3);">…</span>
+          </div>
+          <div style="margin-top:7px;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:10.5px;color:var(--t3);font-family:'JetBrains Mono',monospace;">p.1 / 3 · confidence 91%</span>
+            <span style="font-size:10.5px;color:var(--t3);">·</span>
+            <span style="font-size:10.5px;color:var(--amber);display:inline-flex;align-items:center;gap:3px;"><i data-lucide="alert-triangle" style="width:10px;height:10px;"></i>highlight = คำที่ทำให้ AI วินิจฉัยว่าไม่ใช่กฎระเบียบ</span>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /workspace-nr -->
+
+
+    <!-- ── Action bar (normal review) ────────────────────────── -->
+    <div id="action-bar-normal">
+      <button class="btn btn-primary">
+        <i data-lucide="check-circle-2" style="width:13px;height:13px;"></i>
+        Approve &amp; Extract Rules
+      </button>
+      <button class="btn btn-outline">
+        <i data-lucide="git-pull-request" style="width:13px;height:13px;"></i>
+        Request Changes
+      </button>
+      <button class="btn btn-danger">
+        <i data-lucide="x-circle" style="width:13px;height:13px;"></i>
+        Reject
+      </button>
+      <div class="vr"></div>
+      <button class="btn btn-outline" style="color:var(--t2);">
+        <i data-lucide="user-plus" style="width:13px;height:13px;"></i>
+        Reassign
+      </button>
+      <button class="btn btn-outline" style="color:var(--t2);">
+        <i data-lucide="flag" style="width:13px;height:13px;"></i>
+        Escalate
+      </button>
+      <div style="flex:1;"></div>
+      <span style="font-size:10.5px;color:var(--t3);font-family:'JetBrains Mono',monospace;">
+        auto-saved 2m ago
+      </span>
+    </div>
+
+    <!-- ── Action bar (not relevant) ───────────────────────────── -->
+    <div id="action-bar-nr">
+      <button class="btn" style="background:var(--raised);border-color:var(--ghost);color:var(--t1);">
+        <i data-lucide="archive" style="width:13px;height:13px;"></i>
+        ยืนยัน Not Relevant &amp; Archive
+      </button>
+      <button class="btn btn-outline">
+        <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i>
+        Override — Re-analyze
+      </button>
+      <div class="vr"></div>
+      <button class="btn btn-outline" style="color:var(--t2);">
+        <i data-lucide="move-right" style="width:13px;height:13px;"></i>
+        ย้ายโดเมน
+      </button>
+      <button class="btn btn-outline" style="color:var(--t2);">
+        <i data-lucide="user-plus" style="width:13px;height:13px;"></i>
+        Reassign
+      </button>
+      <div style="flex:1;"></div>
+      <span style="font-size:10.5px;color:var(--t3);font-family:'JetBrains Mono',monospace;">auto-saved 2m ago</span>
+    </div>
+
+  </main><!-- /detail-panel -->
+
+</div><!-- /#app -->
+
+<script>
+  lucide.createIcons();
+
+  // ── Queue item click interaction ──────────────────────────────
+  const workspace    = document.getElementById('workspace');
+  const workspaceNr  = document.getElementById('workspace-nr');
+  const barNormal    = document.getElementById('action-bar-normal');
+  const barNr        = document.getElementById('action-bar-nr');
+  const detailHdr    = document.getElementById('detail-hdr');
+
+  // Pipeline HTML for normal vs not-relevant documents
+  const pipeNormal = `
+    <div class="pipe-stage done"><div class="dot" style="background:var(--t3);"></div>Crawled</div>
+    <div class="pipe-seg done"></div>
+    <div class="pipe-stage done"><div class="dot" style="background:var(--t3);"></div>OCR</div>
+    <div class="pipe-seg done"></div>
+    <div class="pipe-stage done"><div class="dot" style="background:var(--t3);"></div>AI Analysis</div>
+    <div class="pipe-seg done"></div>
+    <div class="pipe-stage active"><div class="dot dot-live" style="background:var(--accent);border-radius:50%;width:6px;height:6px;"></div>Review</div>
+    <div class="pipe-seg"></div>
+    <div class="pipe-stage"><div class="dot" style="background:var(--border);"></div>Rulebook</div>
+    <div class="pipe-seg"></div>
+    <div class="pipe-stage"><div class="dot" style="background:var(--border);"></div>Published</div>`;
+
+  const pipeNr = `
+    <div class="pipe-stage done"><div class="dot" style="background:var(--t3);"></div>Crawled</div>
+    <div class="pipe-seg done"></div>
+    <div class="pipe-stage done"><div class="dot" style="background:var(--t3);"></div>OCR</div>
+    <div class="pipe-seg done"></div>
+    <div class="pipe-stage done"><div class="dot" style="background:var(--t3);"></div>AI Analysis</div>
+    <div class="pipe-seg" style="background:rgba(248,113,113,.3);"></div>
+    <div class="pipe-stage active" style="color:var(--t2);"><div class="dot dot-live" style="background:var(--t2);border-radius:50%;width:6px;height:6px;"></div>Review <span style="font-size:9px;color:var(--t3);">(not relevant)</span></div>
+    <div class="pipe-seg"></div>
+    <div class="pipe-stage"><div class="dot" style="background:var(--border);opacity:.4;"></div><span style="opacity:.35;">Rulebook</span></div>
+    <div class="pipe-seg"></div>
+    <div class="pipe-stage"><div class="dot" style="background:var(--border);opacity:.4;"></div><span style="opacity:.35;">Published</span></div>`;
+
+  document.querySelectorAll('.qi').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.qi').forEach(i => i.classList.remove('sel'));
+      item.classList.add('sel');
+
+      const pipe = detailHdr.querySelector('.pipe-strip');
+      const isNr = item.dataset.type === 'nr';
+
+      if (isNr) {
+        workspace.style.display   = 'none';
+        workspaceNr.style.display = 'flex';
+        barNormal.style.display   = 'none';
+        barNr.style.display       = 'flex';
+        if (pipe) pipe.innerHTML  = pipeNr;
+      } else {
+        workspace.style.display   = 'grid';
+        workspaceNr.style.display = 'none';
+        barNormal.style.display   = 'flex';
+        barNr.style.display       = 'none';
+        if (pipe) pipe.innerHTML  = pipeNormal;
+      }
+
+      // Re-render lucide icons injected by JS
+      lucide.createIcons();
+    });
+  });
+
+  // Mark the pipeline strip container so JS can target it
+  const pipeDiv = detailHdr.querySelector('[style*="border-top:1px solid var(--border)"]');
+  if (pipeDiv) pipeDiv.classList.add('pipe-strip');
+
+  // Set initial display state
+  barNormal.style.display = 'flex';
+  barNr.style.display     = 'none';
+</script>
+</body>
+</html>
