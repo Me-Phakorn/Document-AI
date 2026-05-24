@@ -1,7 +1,23 @@
+# ── Networks ────────────────────────────────────────────────────────────────
+# easypanel: shared network — lets the backend App service reach these containers
+# local:     internal-only network for local docker compose usage
+networks:
+  easypanel:
+    external: true
+  local:
+    driver: bridge
+
+volumes:
+  docai-postgres-data:
+  docai-minio-data:
+
 services:
   postgres:
     image: postgres:16-alpine
     container_name: docai-postgres
+    networks:
+      - easypanel
+      - local
     environment:
       POSTGRES_DB: docai
       POSTGRES_USER: docai
@@ -10,6 +26,7 @@ services:
       - "5432:5432"
     volumes:
       - docai-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U docai -d docai"]
       interval: 10s
@@ -19,8 +36,12 @@ services:
   redis:
     image: redis:7-alpine
     container_name: docai-redis
+    networks:
+      - easypanel
+      - local
     ports:
       - "6379:6379"
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -31,6 +52,9 @@ services:
     image: minio/minio:latest
     container_name: docai-minio
     command: server /data --console-address ":9001"
+    networks:
+      - easypanel
+      - local
     environment:
       MINIO_ROOT_USER: docai-local
       MINIO_ROOT_PASSWORD: docai-local-secret
@@ -38,12 +62,10 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - ./data/minio:/data
+      - docai-minio-data:/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-volumes:
-  docai-postgres-data:
