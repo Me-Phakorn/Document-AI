@@ -37,7 +37,9 @@ export async function POST(request: NextRequest) {
     nextPath = normalizeNextPath(formData.get('nextPath')?.toString());
   }
 
-  const origin = new URL(request.url).origin;
+  const proto = request.headers.get('x-forwarded-proto') ?? 'https';
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? 'localhost:3000';
+  const origin = `${proto}://${host}`;
 
   if (!username || !password) {
     const params = new URLSearchParams({ error: 'Enter both username and password.', next: nextPath });
