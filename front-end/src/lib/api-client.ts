@@ -11,7 +11,13 @@ export class ApiClientError extends Error {
   }
 }
 
-export const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1').replace(/\/$/, '');
+// BACKEND_URL is a server-only env var for internal Docker network access (e.g. http://doc_ai_doc-ai-back:4000/api/v1).
+// Falls back to NEXT_PUBLIC_API_URL for environments where no internal URL is configured.
+export const apiBaseUrl = (
+  process.env.BACKEND_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  'http://localhost:4000/api/v1'
+).replace(/\/$/, '');
 
 export function buildApiUrl(path: string) {
   return `${apiBaseUrl}${path.startsWith('/') ? path : `/${path}`}`;
