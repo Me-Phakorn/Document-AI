@@ -442,7 +442,8 @@ model MasterRulebook {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  versions MasterRulebookVersion[]
+  versions         MasterRulebookVersion[]
+  complianceChecks ComplianceCheck[]
 }
 
 model MasterRulebookVersion {
@@ -460,7 +461,6 @@ model MasterRulebookVersion {
 
   rules RuleVersion[]
   reports Report[]
-  complianceChecks ComplianceCheck[]
 
   @@unique([masterRulebookId, versionNumber])
   @@index([status, createdAt])
@@ -490,25 +490,25 @@ model RuleVersion {
 }
 
 model ComplianceCheck {
-  id                      String                @id @default(uuid()) @db.Uuid
-  inputType               ComplianceInputType
-  status                  ComplianceCheckStatus @default(PENDING)
-  selectedRulebookVersionId String?             @db.Uuid
-  selectedRulebookVersion MasterRulebookVersion? @relation(fields: [selectedRulebookVersionId], references: [id])
-  selectedReportId        String?               @db.Uuid
-  createdById             String?               @db.Uuid
-  inputHash               String?
-  extractedContentHash    String?
-  metadata                Json?
-  createdAt               DateTime              @default(now())
-  updatedAt               DateTime              @updatedAt
+  id                   String                @id @default(uuid()) @db.Uuid
+  inputType            ComplianceInputType
+  status               ComplianceCheckStatus @default(PENDING)
+  selectedRulebookId   String?               @db.Uuid
+  selectedRulebook     MasterRulebook?       @relation(fields: [selectedRulebookId], references: [id])
+  selectedReportId     String?               @db.Uuid
+  createdById          String?               @db.Uuid
+  inputHash            String?
+  extractedContentHash String?
+  metadata             Json?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   results ComplianceCheckResult[]
   reviews ReviewItem[]
   reports Report[]
 
   @@index([status, createdAt])
-  @@index([selectedRulebookVersionId, createdAt])
+  @@index([selectedRulebookId, createdAt])
   @@index([selectedReportId, createdAt])
 }
 

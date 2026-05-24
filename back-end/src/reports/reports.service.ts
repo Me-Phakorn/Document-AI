@@ -69,7 +69,7 @@ export class ReportsService {
   async generateComplianceReport(complianceCheckId: string, context: ReportContext) {
     const complianceCheck = await this.prisma.complianceCheck.findUnique({
       where: { id: complianceCheckId },
-      include: { selectedRulebookVersion: { include: { masterRulebook: true } }, results: { orderBy: { versionNumber: 'desc' } } },
+      include: { selectedRulebook: true, results: { orderBy: { versionNumber: 'desc' } } },
     });
     if (!complianceCheck) {
       throw new NotFoundException({ code: 'COMPLIANCE_CHECK_NOT_FOUND', message: 'Compliance check was not found.' });

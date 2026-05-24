@@ -33,7 +33,7 @@ const navItems = [
 export function AppShell({ children, currentUser }: { children: React.ReactNode; currentUser?: { username: string; role: string } | null }) {
   const pathname = usePathname();
   const isAuthPage = pathname === '/login';
-  const isPrintPage = pathname.startsWith('/rulebook/print');
+  const isPrintPage = pathname.startsWith('/rulebook/print') || pathname.startsWith('/compliance/print');
   const initials = currentUser?.username ? currentUser.username.slice(0, 2).toUpperCase() : 'U';
 
   if (isPrintPage) {

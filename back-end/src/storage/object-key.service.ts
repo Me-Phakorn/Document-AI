@@ -20,4 +20,17 @@ export class ObjectKeyService {
   reportExport(exportArtifactId: string, extension: string) {
     return `exports/${exportArtifactId}/report.${extension.replace(/^\./, '')}`;
   }
+
+  complianceInputImage(checkId: string, mimeType: string): string {
+    const extMap: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+      'image/bmp': 'bmp',
+    };
+    const ext = extMap[mimeType.toLowerCase()] ?? 'jpg';
+    return `compliance-inputs/${checkId}/input.${ext}`;
+  }
 }

@@ -1,8 +1,12 @@
 export type AiMessageRole = 'system' | 'user' | 'assistant';
 
+export type AiMessageContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
+
 export interface AiMessage {
   role: AiMessageRole;
-  content: string;
+  content: string | AiMessageContentPart[];
 }
 
 export interface AiCompletionInput {

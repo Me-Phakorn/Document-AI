@@ -207,7 +207,7 @@ async function importPdfLink(
 
   const extracted = await extractPdfText(pdfBuffer);
   const normalizedText = normalizeText(extracted.text);
-  const contentSha256 = normalizedText.length >= 500 ? sha256(normalizedText) : undefined;
+  const contentSha256 = normalizedText ? sha256(normalizedText) : undefined;
   const existingByFile = await prisma.documentVersion.findFirst({ where: { fileSha256 } });
   const existingByContent = contentSha256 ? await prisma.documentVersion.findFirst({ where: { contentSha256 } }) : null;
 

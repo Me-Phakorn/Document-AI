@@ -39,6 +39,20 @@ export class MinioStorageService {
     }
   }
 
+  async getObjectBuffer(bucket: string, objectKey: string): Promise<Buffer> {
+    try {
+      const stream = await this.client.getObject(bucket, objectKey);
+      return this.readStreamAsBuffer(stream);
+    } catch (error) {
+      throw new NotFoundException({
+        code: 'STORED_OBJECT_NOT_FOUND',
+        message: 'The stored object could not be read.',
+        bucket,
+        objectKey,
+      });
+    }
+  }
+
   async putObject(input: PutObjectInput) {
     await this.ensureBucket(input.bucket);
     await this.client.putObject(input.bucket, input.objectKey, input.content, input.content.byteLength, {
@@ -60,6 +74,15 @@ export class MinioStorageService {
       stream.on('data', (chunk: Buffer | string) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
       stream.on('error', reject);
       stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    });
+  }
+
+  private readStreamAsBuffer(stream: Readable): Promise<Buffer> {
+    return new Promise<Buffer>((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      stream.on('data', (chunk: Buffer | string) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      stream.on('error', reject);
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
     });
   }
 }
