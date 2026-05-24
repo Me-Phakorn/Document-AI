@@ -37,9 +37,15 @@ export async function POST(request: NextRequest) {
     nextPath = normalizeNextPath(formData.get('nextPath')?.toString());
   }
 
-  const proto = request.headers.get('x-forwarded-proto') ?? 'https';
-  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? 'localhost:3000';
-  const origin = `${proto}://${host}`;
+  // Use the configured public app URL; fall back to x-forwarded headers then request URL.
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (() => {
+      const proto = request.headers.get('x-forwarded-proto') ?? 'https';
+      const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? 'localhost:3000';
+      return `${proto}://${host}`;
+    })();
+  const origin = appUrl.replace(/\/$/, '');
 
   if (!username || !password) {
     const params = new URLSearchParams({ error: 'Enter both username and password.', next: nextPath });
