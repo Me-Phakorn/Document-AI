@@ -1,21 +1,16 @@
 'use client';
 
 import { LogIn } from 'lucide-react';
-import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { useSearchParams } from 'next/navigation';
-import { loginAction, type LoginFormState } from '@/app/login/actions';
-import { normalizeNextPath } from '@/lib/auth';
 
-const initialState: LoginFormState = { errorMessage: null };
+interface LoginFormProps {
+  errorMessage?: string | null;
+  nextPath?: string;
+}
 
-export function LoginForm() {
-  const searchParams = useSearchParams();
-  const nextPath = normalizeNextPath(searchParams.get('next'), '/dashboard');
-  const [state, formAction] = useActionState(loginAction, initialState);
-
+export function LoginForm({ errorMessage, nextPath = '/dashboard' }: LoginFormProps) {
   return (
-    <form action={formAction} className="space-y-4">
+    <form action="/api/auth/login" method="POST" className="space-y-4">
       <input type="hidden" name="nextPath" value={nextPath} />
 
       <div className="space-y-2">
@@ -42,7 +37,7 @@ export function LoginForm() {
         />
       </div>
 
-      {state.errorMessage ? <p className="rounded-md border border-[rgba(207,46,53,0.16)] bg-[rgba(207,46,53,0.06)] px-3 py-2 text-sm text-red">{state.errorMessage}</p> : null}
+      {errorMessage ? <p className="rounded-md border border-[rgba(207,46,53,0.16)] bg-[rgba(207,46,53,0.06)] px-3 py-2 text-sm text-red">{errorMessage}</p> : null}
 
       <SubmitButton />
     </form>
