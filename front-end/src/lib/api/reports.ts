@@ -38,8 +38,8 @@ export function listReports(params: { limit?: number; offset?: number } = {}) {
   return apiGet<ReportListResponse>(`/reports?limit=${limit}&offset=${offset}`);
 }
 
-export function generateRulebookReport(rulebookVersionId: string) {
-  return apiPost<ReportRecord>(`/reports/rulebook-versions/${rulebookVersionId}/generate`);
+export function generateRulebookReport(rulebookVersionId: string, params?: { groupBy?: 'document' }) {
+  return apiPost<ReportRecord>(`/reports/rulebook-versions/${rulebookVersionId}/generate`, params ?? {});
 }
 
 export function generateComplianceReport(complianceCheckId: string) {

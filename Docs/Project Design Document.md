@@ -113,9 +113,15 @@
 
 ระบบรองรับการนำเข้าเอกสาร 2 วิธีหลัก
 
+สองวิธีนี้ต้องแยกจากกันอย่างชัดเจนใน UI, API และ audit trail:
+- Manual Upload คือการอัปโหลดไฟล์ PDF จากเครื่องผู้ใช้โดยตรง และไม่ต้องกรอก URL
+- Website Source Crawler คือการกรอก URL หน้า list/search แล้วให้ระบบไล่หา PDF ตาม pagination หรือช่วงหน้าที่กำหนด
+
 ### 5.1 วิธีที่ 1: ผู้ใช้อัปโหลดไฟล์เอง
 
 ผู้ใช้สามารถอัปโหลดไฟล์ PDF ผ่านหน้า Admin ได้
+
+โหมดนี้ไม่ต้องใช้ `source_url` และไม่ควรบังคับให้ผู้ใช้กรอก URL เอกสาร ถ้าเป็นไฟล์ที่ผู้ใช้มีอยู่แล้ว ระบบต้องบันทึกเป็น `SourceType.UPLOAD` และเก็บ original PDF เข้า object storage เหมือนเอกสารชนิดอื่น
 
 Workflow:
 1. ผู้ใช้เข้าสู่ระบบ
@@ -132,6 +138,8 @@ Workflow:
 7. ระบบตรวจสอบว่าไฟล์นี้เคยถูกอัปโหลดมาก่อนหรือไม่
 8. ถ้าไม่ซ้ำ ระบบจะสร้าง Document Record
 9. ระบบส่งไฟล์เข้าสู่กระบวนการอ่านเอกสาร
+
+กรณีไฟล์ที่บันทึกไว้มีปัญหา เช่น PDF เสีย OCR อ่านไม่ได้ ผู้ใช้อัปโหลดผิดไฟล์ หรือต้องการแก้ metadata พื้นฐาน ระบบต้องมีปุ่ม `Edit` หรือ action ในหน้า Document Detail เพื่อให้อัปโหลด PDF ใหม่เป็น `DocumentVersion` ถัดไปของ `Document` เดิม โดยไม่ลบหรือเขียนทับ version เก่า ไฟล์ใหม่ต้องถูกเก็บเป็น original PDF object ใหม่ใน MinIO-compatible object storage, สร้าง OCR artifact ใหม่, ตั้ง version ใหม่เป็น `isLatest`, และบันทึก audit action เช่น `DOCUMENT_VERSION_REUPLOADED`
 
 ### 5.2 วิธีที่ 2: สแกน PDF จาก URL
 
@@ -165,6 +173,7 @@ URL นี้เป็นระบบข้อมูลประกาศแล�
 - related_document_url
 - pdf_url ถ้าพบ
 - crawl_page_number
+- source_document_date / source_document_date_text โดยต้องแยกจากเวลาที่ระบบ import (`createdAt`)
 - crawled_at
 
 Workflow:
@@ -173,7 +182,7 @@ Workflow:
 3. กำหนดกฎการสแกน เช่น:
    - สแกนเฉพาะ domain นี้
    - สแกนเฉพาะ path ที่กำหนด
-   - จำกัดจำนวนหน้า
+  - กำหนดหน้าเริ่มต้นและหน้าสิ้นสุด หรือปล่อยให้ crawler ไล่ next page ไปจนสุดภายใต้ operational cap
    - จำกัด depth ของ crawler
    - เปิด/ปิดการ next page
 4. ระบบเริ่ม scan
@@ -181,7 +190,7 @@ Workflow:
 6. ระบบตรวจสอบ pagination / next page
 7. ระบบป้องกันการ scan หน้าเดิมซ้ำ
 8. ระบบป้องกันการ import PDF ซ้ำ
-9. ระบบบันทึก PDF ที่พบ
+9. ระบบดาวน์โหลดและบันทึก PDF ที่พบเข้า MinIO-compatible object storage พร้อม `StoredObject` metadata
 10. ถ้าเป็น PDF ใหม่หรือมีการเปลี่ยนแปลง จะส่งเข้ากระบวนการอ่านเอกสาร
 
 Workflow เฉพาะกรณี BOT FIPCS:
@@ -195,6 +204,8 @@ Workflow เฉพาะกรณี BOT FIPCS:
 8. ตรวจ URL duplicate, file hash duplicate และ content hash duplicate
 9. สแกนหน้าถัดไปตาม pagination ภายใน limit ที่กำหนด
 10. สร้าง Document Record หรือ Document Version ตามผลการตรวจซ้ำ
+
+สำหรับเอกสารที่มี `source_url` หรือ `pdf_url` อยู่แล้ว หน้า Document Detail ต้องมี action สำหรับกลับไปดาวน์โหลดไฟล์จาก URL เดิมอีกครั้งและบันทึกกลับเข้า storage ของระบบเป็น `DocumentVersion` ใหม่ ใช้สำหรับกรณีไฟล์เดิมเสียหาย ไฟล์ต้นทางถูกแก้ไข หรือผู้ใช้ต้องการ refresh จากแหล่งข้อมูลจริง การ refetch นี้ต้องไม่ทับ original artifact เดิม ต้องสร้าง object key ใหม่, OCR artifact ใหม่, และ audit action เช่น `DOCUMENT_VERSION_REFETCHED_FROM_SOURCE_URL`
 
 ### 5.3 การจัดกลุ่มเอกสารสำหรับวิเคราะห์ด้วย AI
 
@@ -268,6 +279,7 @@ Workflow:
 
 4. Document Version
    - ถ้า URL เดิมแต่ hash เปลี่ยน ระบบควรสร้างเป็น version ใหม่ของเอกสารเดิม
+  - ถ้าผู้ใช้ตั้งใจ re-upload หรือ refetch จาก URL เดิมเพื่อซ่อมหรือ refresh เอกสาร ระบบสามารถสร้าง version ใหม่ของเอกสารเดิมได้ แม้ deduplication ปกติจะพบว่า URL หรือ hash เคยมีอยู่แล้ว เพราะ action นี้เป็นการซ่อม/ปรับปรุง artifact แบบ audit ได้ ไม่ใช่การ import เอกสารใหม่โดยไม่ตั้งใจ
   - ถ้าเอกสารต้นทาง version ใหม่ถูกใช้เป็น source ของ rules ใน Master Rulebook ระบบต้อง flag rules ที่เกี่ยวข้องให้ re-review ก่อนนำ version ใหม่ไปใช้จริง
    - ตัวอย่าง:
      - `Document: ประกาศหลักเกณฑ์โฆษณา`
@@ -488,18 +500,19 @@ CMD ["npm", "run", "start:worker"]
 
 ### 8.3 ขั้นตอนการวิเคราะห์เอกสารด้วย AI
 
-ระบบควรแยกการวิเคราะห์เอกสารด้วย AI ออกจากการพิมพ์ prompt แบบครั้งเดียว โดยให้ผู้ใช้เลือก Prompt Template ที่บันทึกไว้ แล้วนำไปใช้กับเอกสารเดี่ยวหรือ Document Group ได้ซ้ำ ๆ
+ระบบควรแยกการวิเคราะห์เอกสารด้วย AI ออกจากการพิมพ์ prompt แบบครั้งเดียว โดยให้ผู้ใช้เลือก Prompt Template และ Prompt Version ที่บันทึกไว้ แล้วนำไปใช้กับเอกสารเดี่ยวหรือ Document Group ได้ซ้ำ ๆ Prompt Version ที่ถูกใช้ต้องระบุ `AI Model` ที่เลือกไว้ด้วย เพื่อให้ผลวิเคราะห์ trace กลับได้ว่าใช้ prompt, model, document version และ OCR artifact ใด
 
 Workflow สำหรับเอกสารเดี่ยว:
 
 ```text
 เลือกเอกสาร
 -> เลือก Prompt Template และ version
+-> ระบบอ่าน AI provider / AI model จาก Prompt Version
 -> ระบบสร้าง Prompt Instance สำหรับการรันครั้งนี้
 -> ตรวจสอบ OCR text / extracted text / source references
 -> ส่งเข้า AI Analysis Queue
 -> AI วิเคราะห์เอกสาร
--> เก็บผลลัพธ์พร้อม prompt_template_id และ prompt_template_version
+-> เก็บผลลัพธ์พร้อม prompt_template_id, prompt_template_version, provider, model และ rendered_prompt_hash
 -> ส่งผลลัพธ์เข้าสู่ Review Center
 ```
 
@@ -508,6 +521,7 @@ Workflow สำหรับ Document Group:
 ```text
 เลือก Document Group
 -> เลือก Prompt Template และ version
+-> ระบบใช้ AI provider / AI model จาก Prompt Version เดียวกันสำหรับงานใน group
 -> ระบบสร้าง Batch Analysis Job
 -> Enqueue เอกสารทุกฉบับใน group
 -> Worker ดึงเอกสารทีละฉบับตาม FIFO
@@ -523,6 +537,8 @@ Workflow สำหรับ Document Group:
 - prompt_template_id
 - prompt_template_version
 - prompt_instance_id
+- ai_provider
+- ai_model
 - queue_position
 - status
 - started_at
@@ -1117,29 +1133,55 @@ Comment จาก Reviewer:
 
 ### 15.5 Prompt Library และการใช้ Prompt ซ้ำ
 
-ระบบควรมี `Prompt Library` สำหรับบันทึก prompt ที่ผู้ใช้สร้างไว้ และนำกลับมาใช้ซ้ำได้เรื่อย ๆ โดยไม่ต้องเขียน prompt ใหม่ทุกครั้ง Prompt ที่ใช้กับ AI analysis ต้องเป็นข้อมูลที่ version และ audit ได้ เพราะผลวิเคราะห์เอกสารต้องย้อนกลับมาตรวจสอบได้ว่าใช้ prompt ใดในการวิเคราะห์
+ระบบควรมี `Prompt Library` สำหรับบันทึก prompt ที่ผู้ใช้สร้างไว้ และนำกลับมาใช้ซ้ำได้เรื่อย ๆ โดยไม่ต้องเขียน prompt ใหม่ทุกครั้ง Prompt ที่ใช้กับ AI analysis ต้องเป็นข้อมูลที่ version และ audit ได้ เพราะผลวิเคราะห์เอกสารต้องย้อนกลับมาตรวจสอบได้ว่าใช้ prompt ใด ใช้ AI model ใด และใช้ OCR text ชุดใดในการวิเคราะห์
+
+ความเข้าใจล่าสุดของหน้า Prompt Library คือหน้านี้ไม่ใช่หน้า configuration สำหรับ provider และไม่ใช่ที่ให้ผู้ใช้พิมพ์ custom model เอง แต่เป็นหน้าสร้าง Template สำหรับงานวิเคราะห์เอกสาร โดยมี field หลักเพียง 4 ส่วน:
+- `Name`: ชื่อ Template ที่ผู้ใช้เข้าใจง่าย เช่น `เทมเพลตสร้าง Rule Base จากเอกสารกำกับดูแลไทย`
+- `AI Model`: dropdown ที่ backend ดึงรายการ model จาก OpenRouter แล้วส่งให้ frontend แบบ sanitized
+- `Tags`: capsule selector สำหรับจัดหมวดหมู่ Template เช่น `กฎระเบียบไทย`, `Rule Base`, `Compliance`, `ธนาคารแห่งประเทศไทย`, `ประกาศ/หลักเกณฑ์`, `ความเสี่ยงสูง`, `การเปิดเผยข้อมูล`
+- `Text`: เนื้อหา prompt ที่จะถูก version และใช้ render กับเอกสารจริง
+
+สิ่งที่ไม่ควรอยู่ในฟอร์มหลักของหน้า Prompt Library:
+- ไม่ควรมีช่อง `custom model` เพราะผู้ใช้ควรเลือกจาก dropdown ของ OpenRouter เพื่อหลีกเลี่ยง model ID ผิดรูปแบบ และเพื่อให้ cost/traceability จัดการได้จากระบบกลาง
+- ไม่ควรให้ frontend อ่านหรือ hardcode model list จาก environment variable เช่น `AI_MODEL_OPTIONS`; รายการ model ต้องมาจาก backend ที่เรียก OpenRouter `/models`
+- ไม่ควรบังคับ `domain` ใน UI หลัก เพราะ DocAI ต้องเป็น domain-agnostic และ tag เพียงพอสำหรับการจัดหมวดหมู่ในช่วงนี้
+- ไม่ควรแสดง `variables` เป็นช่องหลักให้ผู้ใช้ทั่วไปแก้ เพราะ Rule Base extraction ใช้ตัวแปรมาตรฐาน `{{documentTitle}}` และ `{{ocrText}}`; ถ้าต้องรองรับตัวแปรขั้นสูงในอนาคตควรออกแบบเป็น advanced workflow ที่ version และ validate ได้
 
 คำศัพท์หลัก:
-- `Prompt Template`: prompt ที่บันทึกไว้ใน library และนำกลับมาใช้ซ้ำได้
-- `Prompt Version`: version ของ prompt template ณ เวลาที่ใช้งาน
-- `Prompt Instance`: การนำ prompt template version หนึ่งไปใช้รันจริงกับเอกสารหรือ document group
-- `Prompt Variables`: ตัวแปรใน prompt เช่น `{{document_content}}`, `{{user_prompt}}`, `{{master_rulebook}}`
+- `Prompt Template`: record ระดับ library ที่บันทึกชื่อ, tags, status และ lifecycle ของ template
+- `Prompt Template Version`: version ที่ immutable ของ prompt text, variables, ai_provider และ ai_model ที่เลือกไว้ ณ เวลาสร้าง version
+- `Prompt Instance`: การนำ Prompt Template Version หนึ่งไป render และใช้รันจริงกับ DocumentVersion หรือ Document Group
+- `Prompt Variables`: ตัวแปรที่ระบบเติมค่าให้ตอน render prompt เช่น `{{documentTitle}}` และ `{{ocrText}}`
 
 ข้อมูลที่ควรเก็บใน Prompt Template:
 
 ```json
 {
   "prompt_template_id": "uuid",
-  "name": "Extract Credit Compliance Rules",
-  "domain": "credit",
-  "version": 3,
-  "tags": ["credit", "disclosure", "thai-regulation"],
+  "name": "เทมเพลตสร้าง Rule Base จากเอกสารกำกับดูแลไทย",
+  "tags": ["กฎระเบียบไทย", "Rule Base", "Compliance"],
   "status": "ACTIVE",
-  "template_text": "คุณคือ AI สำหรับดึงข้อกำหนดเฉพาะ...",
-  "variables": ["document_content", "user_prompt"],
   "created_by": "analyst_user_id",
   "updated_by": "analyst_user_id",
-  "created_at": "2026-05-19T10:00:00Z"
+  "created_at": "2026-05-20T10:00:00Z",
+  "updated_at": "2026-05-20T10:00:00Z"
+}
+```
+
+ข้อมูลที่ควรเก็บใน Prompt Template Version:
+
+```json
+{
+  "prompt_template_version_id": "uuid",
+  "prompt_template_id": "uuid",
+  "version_number": 1,
+  "status": "ACTIVE",
+  "template_text": "ชื่อเอกสาร: {{documentTitle}}\n\nคุณคือ AI สำหรับอ่านเอกสารกำกับดูแล...",
+  "variables": ["documentTitle", "ocrText"],
+  "ai_provider": "openrouter",
+  "ai_model": "openai/gpt-4o-mini",
+  "created_by": "analyst_user_id",
+  "created_at": "2026-05-20T10:00:00Z"
 }
 ```
 
@@ -1148,45 +1190,137 @@ Comment จาก Reviewer:
 ```json
 {
   "prompt_instance_id": "uuid",
-  "prompt_template_id": "uuid",
-  "prompt_template_version": 3,
-  "document_id": "uuid",
-  "group_id": "uuid",
+  "prompt_template_version_id": "uuid",
+  "document_version_id": "uuid",
+  "group_id": "uuid_or_null",
   "rendered_prompt_hash": "sha256",
-  "model": "configured-model-name",
-  "token_usage": 12000,
-  "estimated_cost": 0.45,
-  "created_at": "2026-05-19T10:05:00Z"
+  "variables": {
+    "documentTitle": "ประกาศธนาคารแห่งประเทศไทย...",
+    "textLength": 48210
+  },
+  "provider": "openrouter",
+  "model": "openai/gpt-4o-mini",
+  "created_at": "2026-05-20T10:05:00Z"
 }
 ```
 
+`PromptInstance` ไม่จำเป็นต้องเก็บ full rendered prompt เป็น plain text ใน database ถ้ามีข้อจำกัดด้าน privacy หรือ storage แต่ต้องเก็บ `rendered_prompt_hash`, variables metadata, provider/model และความสัมพันธ์กับ Prompt Template Version เพื่อให้ audit ตรวจย้อนกลับได้
+
+Workflow การสร้าง Template:
+
+```text
+ผู้ใช้เปิดหน้า Prompt Library
+-> กรอก Name
+-> เลือก AI Model จาก dropdown ที่ backend ได้จาก OpenRouter
+-> เลือก Tags จาก capsule selector
+-> แก้ Text ของ prompt ภาษาไทย
+-> ระบบสร้าง Prompt Template
+-> ระบบสร้าง Prompt Template Version หมายเลข 1 พร้อม variables มาตรฐาน documentTitle และ ocrText
+-> ระบบบันทึก ai_provider และ ai_model ไว้กับ Prompt Template Version
+-> ระบบเขียน AuditLog สำหรับการสร้าง template/version
+```
+
+Workflow การแก้ Template ที่มีอยู่แล้ว:
+
+```text
+ผู้ใช้เลือก Template ที่มีอยู่
+-> ดู version ปัจจุบันและ model ที่ version นั้นใช้
+-> สร้าง New draft version พร้อมเลือก AI Model จาก dropdown
+-> แก้ Text ของ prompt
+-> ระบบสร้าง Prompt Template Version ใหม่ ไม่เขียนทับ version เก่า
+-> Reviewer/Admin หรือ role ที่ได้รับสิทธิ์ activate version ใหม่
+-> version เก่าถูกเปลี่ยนสถานะตาม policy เช่น DEPRECATED หรือคงไว้เพื่อ audit
+```
+
+ตัวอย่าง Prompt Text เริ่มต้นสำหรับ Rule Base extraction ภาษาไทย:
+
+```text
+ชื่อเอกสาร: {{documentTitle}}
+
+คุณคือ AI สำหรับอ่านเอกสารกำกับดูแลและแปลงสาระสำคัญให้เป็น Rule Base สำหรับระบบตรวจสอบ Compliance
+
+Rule Base หมายถึงชุดกฎที่ระบบสามารถนำไปใช้ตรวจสอบเนื้อหาอื่นได้ โดยแต่ละกฎต้องมีเงื่อนไขที่ทำให้กฎมีผล หน้าที่หรือข้อกำหนดที่ต้องปฏิบัติ ข้อห้าม ข้อยกเว้น ระดับความเสี่ยง และหลักฐานอ้างอิงจากเอกสารต้นทาง
+
+ให้อ่าน OCR text แล้วสกัดเฉพาะข้อกำหนดที่นำไปใช้เป็นกฎได้จริง เช่น ข้อกำหนดเชิงบังคับ เงื่อนไขการอนุญาต หน้าที่ของผู้ประกอบธุรกิจ ข้อห้าม ระยะเวลา เอกสารประกอบ การเปิดเผยข้อมูล เกณฑ์ความเสี่ยง หรือข้อยกเว้น
+
+ถ้าเอกสารไม่เกี่ยวข้องกับการสร้าง Rule Base ให้ตอบ outcome เป็น NOT_RELEVANT และอธิบายเหตุผลเป็นภาษาไทย
+
+ต้องตอบเป็น JSON ที่ถูกต้องเท่านั้น ห้ามมีข้อความอื่นนอก JSON ค่า enum เช่น outcome และ riskLevel ให้คงเป็นภาษาอังกฤษเพื่อให้ระบบอ่านได้ แต่ข้อความอธิบายทั้งหมดต้องเป็นภาษาไทย
+
+รูปแบบผลลัพธ์ที่ต้องการ:
+{
+  "outcome": "RULES_FOUND|NO_RULES_FOUND|NOT_RELEVANT",
+  "summary": "สรุปภาษาไทยว่าเอกสารนี้เกี่ยวกับอะไรและพบข้อกำหนดประเภทใด",
+  "confidence": 0.0,
+  "rules": [
+    {
+      "ruleCode": "R-001",
+      "title": "ชื่อกฎภาษาไทยแบบสั้นและชัดเจน",
+      "description": "คำอธิบายกฎเป็นภาษาไทย",
+      "condition": "เงื่อนไขที่ทำให้กฎนี้มีผลเป็นภาษาไทย",
+      "obligation": "หน้าที่หรือสิ่งที่ต้องปฏิบัติเป็นภาษาไทย",
+      "prohibition": "ข้อห้ามหรือข้อจำกัดเป็นภาษาไทย ถ้าไม่มีให้ใส่ null",
+      "exception": "ข้อยกเว้นเป็นภาษาไทย ถ้าไม่มีให้ใส่ null",
+      "riskLevel": "HIGH|MEDIUM|LOW|INFO",
+      "sourceReferences": [
+        {
+          "page": 1,
+          "quote": "ข้อความอ้างอิงจากเอกสารต้นทางเป็นภาษาไทย"
+        }
+      ]
+    }
+  ],
+  "notRelevantReason": "เหตุผลภาษาไทยเมื่อ outcome เป็น NOT_RELEVANT หรือ null"
+}
+
+OCR text:
+{{ocrText}}
+```
+
 ข้อกำหนดสำหรับ Prompt Library:
-- Prompt Template ต้องมี `domain`, `version`, และ `tags`
+- Prompt Template ต้องมี `name`, `tags`, `status`, `created_by`, `created_at` และ `updated_at`
+- Prompt Template Version ต้องมี `version_number`, `status`, `template_text`, `variables`, `ai_provider`, `ai_model`, `created_by` และ `created_at`
 - เมื่อแก้ prompt ที่เคยถูกใช้งานแล้ว ต้องสร้าง version ใหม่ ไม่ควรเขียนทับ version เดิม
-- AI Analysis Result ต้องอ้างอิงกลับไปยัง prompt_template_id และ prompt_template_version เสมอ
+- AI Analysis Result ต้องอ้างอิงกลับไปยัง Prompt Instance และ Prompt Template Version เสมอ
+- Prompt Version ต้องเก็บ `ai_provider` และ `ai_model` ที่เลือกไว้ เพื่อให้ Prompt Instance และ AI Analysis Result trace กลับได้ว่าใช้ model ใด ไม่ใช่พึ่งค่า global อย่างเดียว
+- หน้า Prompt Library ต้องเลือก `AI Model` จากรายการ model ของ OpenRouter ผ่าน backend API แบบ sanitized ไม่ควรให้ frontend อ่าน secret หรือใช้รายการ model ที่ hardcode ใน environment variable
+- ถ้า OpenRouter `/models` ใช้งานไม่ได้ backend ควร fallback เป็น model default จาก `AI_MODEL` เพียงรายการเดียว เพื่อให้ระบบยังสร้าง template ได้โดยไม่หลอกผู้ใช้ว่ามีรายการ model อื่นพร้อมใช้งาน
+- Template ตัวอย่างต้องอธิบาย Rule Base เป็นภาษาไทย และกำหนดให้ผลลัพธ์เชิงเนื้อหาเป็นภาษาไทย โดยคงค่า enum ที่ระบบต้องอ่าน เช่น `outcome` และ `riskLevel` เป็นค่าคงที่ตาม contract
 - Prompt Template สามารถใช้กับเอกสารเดี่ยวหรือ Document Group ได้
 - Prompt Template เก่าที่ไม่ควรใช้แล้วควรเปลี่ยนสถานะเป็น `DEPRECATED` แทนการลบทิ้ง
-- ระบบควรเก็บ usage history เพื่อดูว่า prompt ใดถูกใช้กับเอกสารใดและให้ผลลัพธ์อย่างไร
+- ระบบควรเก็บ usage history เพื่อดูว่า prompt ใดถูกใช้กับเอกสารใด ใช้ model ใด และให้ผลลัพธ์อย่างไร
 
-สถานะของ Prompt Template:
-- `DRAFT`
-- `ACTIVE`
-- `DEPRECATED`
-- `ARCHIVED`
+สถานะของ Prompt Template และ Prompt Template Version:
+- `DRAFT`: version หรือ template ที่ยังไม่ควรถูกใช้เป็น default ใน workflow จริง
+- `ACTIVE`: version หรือ template ที่พร้อมใช้งานใน AI analysis
+- `DEPRECATED`: version หรือ template ที่ไม่ควรเลือกใช้งานใหม่ แต่ต้องเก็บไว้เพื่อ trace ผลเก่า
+- `ARCHIVED`: version หรือ template ที่ซ่อนจาก workflow ปกติ แต่ยังเก็บเพื่อ audit/history
 
 ### 15.6 AI Model และ Cost Policy
 
-ในเอกสารระดับ Project Design นี้ยังไม่กำหนด model family, fallback strategy, budget cap หรือ token limit แบบละเอียด แต่ระบบควรออกแบบให้การตั้งค่า AI model เป็น configuration ที่เปลี่ยนได้ภายหลัง
+AI Model สำหรับ Prompt Library ต้องแยกระหว่าง default runtime configuration กับ model ที่ผู้ใช้เลือกใน Prompt Version
+
+หลักการ:
+- `AI_MODEL` ใน environment ใช้เป็น default และ fallback เท่านั้น ไม่ใช่ source ของ dropdown หลัก
+- รายการ dropdown ของหน้า Prompt Library ต้องมาจาก OpenRouter `/models` ผ่าน backend API
+- Backend เป็นผู้ถือ `OPENROUTER_API_KEY`, `OPENROUTER_HTTP_REFERER` และ `OPENROUTER_APP_TITLE`; frontend เห็นเฉพาะรายการ model ID ที่ sanitized แล้ว
+- ไม่ใช้ `AI_MODEL_OPTIONS` หรือ environment variable ลักษณะเดียวกันเป็น model catalog เพราะทำให้รายการใน UI ไม่ตรงกับ provider จริงและดูแลยาก
+- Prompt Template Version เก็บ `ai_provider` และ `ai_model` ที่เลือก ณ เวลาสร้าง version
+- Prompt Instance และ AI Analysis Result ต้องเก็บ requested/actual provider/model เพื่อรองรับ audit, cost attribution และ debugging
+- ถ้า primary provider ล้มเหลวและระบบใช้ fallback provider ผลลัพธ์ต้องบันทึก provider/model ที่ใช้จริง โดยยังคง trace กลับไปหา requested model จาก Prompt Version ได้
 
 ข้อมูลที่ควรเก็บเพื่อรองรับการควบคุมค่าใช้จ่ายในอนาคต:
 - model ที่ใช้
+- requested model จาก Prompt Version
+- actual model จาก provider response ถ้ามี
+- provider ที่ใช้จริง
 - prompt template version
 - token usage
 - latency
 - ค่าใช้จ่ายโดยประมาณ
 - success / failure ของ AI job
 
-รายละเอียดเชิง implementation เช่น model fallback, per-document token budget, หรือ budget cap รายเดือน ควรถูกแยกไปกำหนดใน technical design หรือ implementation plan ภายหลัง
+รายละเอียดเชิง implementation เช่น per-document token budget, budget cap รายเดือน, cache policy ของ OpenRouter model list, model allowlist/denylist หรือการ map model ไปยัง pricing tier ควรถูกแยกไปกำหนดใน technical design หรือ implementation plan ภายหลัง
 
 ## 16. สถานะของเอกสาร
 
@@ -1300,8 +1434,8 @@ Comment จาก Reviewer:
 - เลือกเอกสาร
 - เลือก prompt template
 - เลือก prompt template version
-- ใส่ custom prompt
-- บันทึก prompt เป็น reusable Prompt Template
+- ใช้ Prompt Template Version ที่ผ่าน Prompt Library เป็นหลัก ไม่ควรให้พิมพ์ adhoc custom prompt ใน workflow ปกติ
+- แสดง AI provider/model ที่ version นั้นเลือกไว้ก่อน enqueue งาน
 - รัน AI
 - เลือก Document Group เพื่อ enqueue วิเคราะห์หลายเอกสาร
 - ดู queue position และ progress รายเอกสาร
@@ -1311,10 +1445,13 @@ Comment จาก Reviewer:
 ### 21.5 Prompt Library
 
 ใช้สำหรับ:
-- สร้าง Prompt Template
-- กำหนด domain, tag และ variables
-- version prompt เมื่อมีการแก้ไข
+- สร้าง Prompt Template ด้วย field หลัก `Name`, `AI Model`, `Tags` และ `Text`
+- เลือก `AI Model` จาก dropdown ของ OpenRouter ที่ backend ส่งมา ไม่ใช่การพิมพ์ custom model เอง
+- เลือก tags เป็น capsule selector เพื่อจัดหมวดหมู่ template
+- สร้าง prompt text ภาษาไทยสำหรับ Rule Base extraction และกำหนดผลลัพธ์ภาษาไทย
+- version prompt เมื่อมีการแก้ไข โดยสร้าง Prompt Template Version ใหม่เสมอ
 - เปิด/ปิด prompt ด้วยสถานะ `ACTIVE` / `DEPRECATED`
+- แสดง provider/model ที่ผูกกับแต่ละ version
 - ดู usage history ของ prompt
 - ดู token usage และค่าใช้จ่ายโดยประมาณต่อ prompt
 
@@ -1477,6 +1614,7 @@ Entity หลักที่ควรมีใน schema:
 - `DocumentGroup`
 - `BatchAnalysisJob`
 - `PromptTemplate`
+- `PromptTemplateVersion`
 - `PromptInstance`
 - `OCRResult`
 - `AIAnalysisJob`

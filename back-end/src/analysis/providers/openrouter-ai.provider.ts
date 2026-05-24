@@ -22,6 +22,7 @@ export class OpenRouterAiProvider implements AiProvider {
 
   async createChatCompletion(input: AiCompletionInput): Promise<AiCompletionResult> {
     const config = this.aiConfig.getOpenRouterConfig();
+    const model = input.model?.trim() || config.model;
     if (!config.apiKey) {
       throw new ServiceUnavailableException({
         code: 'AI_OPENROUTER_API_KEY_MISSING',
@@ -43,7 +44,7 @@ export class OpenRouterAiProvider implements AiProvider {
           'X-Title': config.appTitle,
         },
         body: JSON.stringify({
-          model: config.model,
+          model,
           messages: input.messages,
           temperature: input.temperature ?? 0.1,
           ...(input.responseFormatJson ? { response_format: { type: 'json_object' } } : {}),
@@ -63,7 +64,7 @@ export class OpenRouterAiProvider implements AiProvider {
       const payload = (await response.json()) as OpenRouterChatResponse;
       return {
         provider: 'openrouter',
-        model: payload.model ?? config.model,
+        model: payload.model ?? model,
         content: payload.choices?.[0]?.message?.content ?? '',
         promptTokens: payload.usage?.prompt_tokens,
         completionTokens: payload.usage?.completion_tokens,

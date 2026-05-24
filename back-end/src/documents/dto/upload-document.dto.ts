@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SourceType } from '@prisma/client';
-import { IsBase64, IsEnum, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
+import { IsBase64, IsDateString, IsEnum, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
 
 export class UploadDocumentDto {
   @ApiProperty({ type: String, example: 'BOT FIPCS notice' })
@@ -22,6 +22,17 @@ export class UploadDocumentDto {
   @IsOptional()
   @IsUrl({ require_tld: false })
   sourceUrl?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time', example: '2026-05-20T00:00:00.000Z' })
+  @IsOptional()
+  @IsDateString()
+  sourceDocumentDate?: string;
+
+  @ApiPropertyOptional({ type: String, example: '20 พ.ค. 2569' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  sourceDocumentDateText?: string;
 
   @ApiProperty({ type: String, example: 'notice.pdf' })
   @IsString()

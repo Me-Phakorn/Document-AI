@@ -19,6 +19,8 @@ export interface DocumentVersionRecord {
   title: string;
   sourceUrl: string | null;
   sourceUrlHash: string | null;
+  sourceDocumentDate: string | null;
+  sourceDocumentDateText: string | null;
   fileName: string | null;
   mimeType: string | null;
   byteSize: string | null;
@@ -126,10 +128,13 @@ export interface OcrTextResponse {
   textLength: number;
 }
 
-export function listDocuments(params: { limit?: number; offset?: number } = {}) {
-  const limit = params.limit ?? 25;
-  const offset = params.offset ?? 0;
-  return apiGet<DocumentListResponse>(`/documents?limit=${limit}&offset=${offset}`);
+export function listDocuments(params: { limit?: number; offset?: number; status?: string; search?: string; ignore?: string } = {}) {
+  const { limit = 25, offset = 0, status, search, ignore } = params;
+  const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (status) qs.set('status', status);
+  if (search?.trim()) qs.set('search', search.trim());
+  if (ignore?.trim()) qs.set('ignore', ignore.trim());
+  return apiGet<DocumentListResponse>(`/documents?${qs}`);
 }
 
 export function getDocumentSummary() {
@@ -148,6 +153,8 @@ export interface UploadDocumentInput {
   title: string;
   domain?: string;
   sourceUrl?: string;
+  sourceDocumentDate?: string;
+  sourceDocumentDateText?: string;
   fileName: string;
   mimeType?: string;
   contentBase64: string;
@@ -160,4 +167,16 @@ export function uploadDocument(input: UploadDocumentInput) {
     mimeType: 'application/pdf',
     ...input,
   });
+}
+
+export function reuploadDocumentVersion(documentVersionId: string, input: UploadDocumentInput) {
+  return apiPost<{ outcome: string; documentId?: string; documentVersionId?: string; reason?: string }>(`/documents/${documentVersionId}/reupload`, {
+    sourceType: 'UPLOAD',
+    mimeType: 'application/pdf',
+    ...input,
+  });
+}
+
+export function refetchDocumentSource(documentVersionId: string) {
+  return apiPost<{ outcome: string; documentId?: string; documentVersionId?: string; reason?: string }>(`/documents/${documentVersionId}/refetch-source`);
 }

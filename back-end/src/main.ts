@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { createBasicAuthMiddleware } from './auth/basic-auth.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,8 +15,6 @@ async function bootstrap() {
 
   bodyParserApp.useBodyParser('json', { limit: config.get<string>('API_JSON_BODY_LIMIT', '50mb') });
   bodyParserApp.useBodyParser('urlencoded', { limit: config.get<string>('API_JSON_BODY_LIMIT', '50mb'), extended: true });
-
-  app.use(createBasicAuthMiddleware(config));
 
   app.enableCors({
     origin: config.get<string>('FRONTEND_ORIGIN', 'http://localhost:3000'),
@@ -37,7 +34,7 @@ async function bootstrap() {
     .setTitle('DocAI API')
     .setDescription('Document intelligence, review, rulebook, compliance, and reporting API')
     .setVersion('0.1.0')
-    .addBasicAuth()
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

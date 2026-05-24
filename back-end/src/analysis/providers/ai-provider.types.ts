@@ -9,6 +9,7 @@ export interface AiCompletionInput {
   messages: AiMessage[];
   correlationId?: string;
   fallbackFromProvider?: string;
+  model?: string;
   responseFormatJson?: boolean;
   temperature?: number;
 }

@@ -9,6 +9,8 @@ export interface PromptTemplateVersionRecord {
   status: PromptStatus;
   templateText: string;
   variables: string[];
+  aiProvider: string | null;
+  aiModel: string | null;
   createdById: string | null;
   createdAt: string;
 }
@@ -38,11 +40,13 @@ export interface CreatePromptTemplateRequest {
   tags?: string[];
   templateText: string;
   variables?: string[];
+  aiModel?: string;
 }
 
 export interface CreatePromptVersionRequest {
   templateText: string;
   variables?: string[];
+  aiModel?: string;
 }
 
 export function listPromptTemplates(params: { limit?: number; offset?: number } = {}) {

@@ -8,7 +8,6 @@ import {
   BrainCircuit,
   ClipboardCheck,
   FileText,
-  Globe2,
   History,
   LayoutDashboard,
   Settings,
@@ -19,8 +18,8 @@ import {
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/documents', label: 'Documents', icon: UploadCloud },
-  { href: '/sources', label: 'Sources', icon: Globe2 },
+  { href: '/import', label: 'Import', icon: UploadCloud },
+  { href: '/documents', label: 'Documents', icon: FileText },
   { href: '/prompts', label: 'Prompts', icon: BrainCircuit },
   { href: '/review', label: 'Review', icon: ClipboardCheck },
   { href: '/rulebook', label: 'Rulebook', icon: BookOpen },
@@ -31,8 +30,19 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, currentUser }: { children: React.ReactNode; currentUser?: { username: string; role: string } | null }) {
   const pathname = usePathname();
+  const isAuthPage = pathname === '/login';
+  const isPrintPage = pathname.startsWith('/rulebook/print');
+  const initials = currentUser?.username ? currentUser.username.slice(0, 2).toUpperCase() : 'U';
+
+  if (isPrintPage) {
+    return <>{children}</>;
+  }
+
+  if (isAuthPage) {
+    return <div className="min-h-screen bg-bg text-t1">{children}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-bg text-t1">
@@ -60,7 +70,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </div>
         <div className="ml-auto flex min-w-0 items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">P</div>
+          <Link href="/logout" className="rounded-md border border-border bg-raised px-3 py-1.5 text-sm text-t2 transition hover:bg-white hover:text-t1">
+            Log out
+          </Link>
+          <div
+            title={currentUser ? `${currentUser.username} (${currentUser.role})` : undefined}
+            className="flex h-8 min-w-8 items-center justify-center rounded-full bg-accent px-2 text-xs font-bold text-white"
+          >
+            {initials}
+          </div>
         </div>
       </header>
 

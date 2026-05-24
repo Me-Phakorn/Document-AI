@@ -23,6 +23,7 @@ export class ClaudeCodeAiProvider implements AiProvider {
 
   async createChatCompletion(input: AiCompletionInput): Promise<AiCompletionResult> {
     const config = this.aiConfig.getClaudeCodeConfig();
+    const model = input.model?.trim() || config.model;
     const systemPrompt = this.extractSystemPrompt(input.messages);
     const prompt = this.renderPrompt(input.messages, input.fallbackFromProvider);
     const args = [
@@ -33,7 +34,7 @@ export class ClaudeCodeAiProvider implements AiProvider {
       'text',
       '--no-session-persistence',
       '--model',
-      config.model,
+      model,
       '--permission-mode',
       'dontAsk',
     ];
@@ -51,7 +52,7 @@ export class ClaudeCodeAiProvider implements AiProvider {
 
     return {
       provider: 'claude-code',
-      model: config.model,
+      model,
       content: parsed.content,
       promptTokens: parsed.promptTokens,
       completionTokens: parsed.completionTokens,

@@ -16,6 +16,13 @@ export function formatDateTime(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
+export function formatDate(value: string | null | undefined) {
+  if (!value) return 'Not recorded';
+  return new Intl.DateTimeFormat('th-TH', {
+    dateStyle: 'medium',
+  }).format(new Date(value));
+}
+
 export function shortHash(value: string | null | undefined) {
   if (!value) return 'none';
   return `${value.slice(0, 10)}...${value.slice(-6)}`;

@@ -18,6 +18,10 @@ import { AiConfigService } from './ai-config.service';
 interface AnalysisContext {
   actorId?: string;
   correlationId: string;
+  /** Reviewer comment from a rejected round — injected as a prefix in the AI prompt */
+  reviewerComment?: string;
+  /** Explicit round number for the new ReviewItem (defaults to 1 on first analysis) */
+  roundNumber?: number;
 }
 
 interface ParsedAnalysisResult {
@@ -75,8 +79,12 @@ export class AnalysisService {
       throw new ServiceUnavailableException({ code: 'OCR_TEXT_EMPTY', message: 'OCR text is empty and cannot be analyzed.' });
     }
 
-    const promptTemplateVersion = await this.ensureDefaultPromptTemplateVersion(context.actorId);
-    const renderedPrompt = this.renderRuleExtractionPrompt(documentVersion.title, ocrText);
+    const promptTemplateVersion = await this.getActivePromptTemplateVersion(context.actorId);
+    const selectedModel = promptTemplateVersion.aiModel ?? this.aiConfig.model;
+    const reviewerPrefix = context.reviewerComment
+      ? `[RE-ANALYSIS — Round ${context.roundNumber ?? '?'}]\n\nPrevious round reviewer feedback:\n"${context.reviewerComment}"\n\nPlease re-analyse the document taking this feedback into account. The previous extraction was rejected for the reason above.\n\n---\n\n`
+      : '';
+    const renderedPrompt = reviewerPrefix + this.renderPromptTemplate(promptTemplateVersion.templateText, documentVersion.title, ocrText);
     const renderedPromptHash = this.sha256(renderedPrompt);
     const promptInstance = await this.prisma.promptInstance.create({
       data: {
@@ -85,7 +93,7 @@ export class AnalysisService {
         renderedPromptHash,
         variables: { documentTitle: documentVersion.title, textLength: ocrText.length },
         provider: this.aiConfig.provider,
-        model: this.aiConfig.model,
+        model: selectedModel,
       },
     });
 
@@ -104,6 +112,7 @@ export class AnalysisService {
       const startedAt = Date.now();
       const completion = await this.aiCompletion.createChatCompletion({
         correlationId: context.correlationId,
+        model: selectedModel,
         responseFormatJson: true,
         temperature: 0.1,
         messages: [
@@ -133,6 +142,7 @@ export class AnalysisService {
             reviewType,
             status: ReviewStatus.PENDING,
             aiAnalysisResultId: saved.id,
+            roundNumber: context.roundNumber ?? 1,
             comment: outcome === AiAnalysisOutcome.NOT_RELEVANT ? parsed.notRelevantReason ?? parsed.summary ?? 'AI marked this document as not relevant.' : null,
           },
         });
@@ -148,7 +158,7 @@ export class AnalysisService {
             previousState: { status: AiAnalysisStatus.PROCESSING },
             nextState: { status: AiAnalysisStatus.COMPLETED, outcome, reviewType },
             correlationId: context.correlationId,
-            requestMetadata: { documentVersionId, promptInstanceId: promptInstance.id, provider: completion.provider, model: completion.model },
+            requestMetadata: { documentVersionId, promptTemplateVersionId: promptTemplateVersion.id, promptInstanceId: promptInstance.id, provider: completion.provider, requestedModel: selectedModel, model: completion.model },
           },
           tx,
         );
@@ -190,6 +200,91 @@ export class AnalysisService {
     }
   }
 
+  /**
+   * Validate that the document version has OCR, mark it AI_PENDING immediately, then
+   * fire a re-analysis in the background with the reviewer comment injected into the prompt.
+   * Returns immediately so the HTTP call does not block on the AI response.
+   */
+  async reReviewDocumentVersion(
+    documentVersionId: string,
+    reviewerComment: string,
+    roundNumber: number,
+    context: AnalysisContext,
+  ): Promise<{ queued: true; documentVersionId: string; round: number }> {
+    const documentVersion = await this.prisma.documentVersion.findUnique({
+      where: { id: documentVersionId },
+      include: { document: true, ocrArtifacts: { orderBy: { createdAt: 'desc' } } },
+    });
+    if (!documentVersion) {
+      throw new NotFoundException({ code: 'DOCUMENT_VERSION_NOT_FOUND', message: 'Document version was not found.' });
+    }
+
+    const hasOcr = documentVersion.ocrArtifacts.some((a) => a.textObjectId);
+    if (!hasOcr) {
+      throw new NotFoundException({ code: 'OCR_TEXT_NOT_FOUND', message: 'OCR text is required before re-analysis.' });
+    }
+
+    // Mark as pending immediately so the UI reflects the state change right away
+    await this.prisma.$transaction([
+      this.prisma.documentVersion.update({ where: { id: documentVersionId }, data: { status: DocumentStatus.AI_PENDING } }),
+      this.prisma.document.update({ where: { id: documentVersion.documentId }, data: { status: DocumentStatus.AI_PENDING } }),
+    ]);
+
+    // Fire the full analysis pipeline in the background
+    void this.analyzeDocumentVersion(documentVersionId, {
+      ...context,
+      reviewerComment,
+      roundNumber,
+    }).catch((err: unknown) => {
+      console.error(
+        `[reReview] round ${roundNumber} failed for ${documentVersionId}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    });
+
+    return { queued: true, documentVersionId, round: roundNumber };
+  }
+
+  async batchQueue(documentVersionIds: string[], context: AnalysisContext): Promise<{ queued: number; skipped: number }> {
+    const versions = await this.prisma.documentVersion.findMany({
+      where: {
+        id: { in: documentVersionIds },
+        status: { notIn: [DocumentStatus.AI_PROCESSING, DocumentStatus.AI_PENDING] },
+      },
+      select: { id: true, documentId: true },
+    });
+
+    if (versions.length === 0) {
+      return { queued: 0, skipped: documentVersionIds.length };
+    }
+
+    // Mark all eligible documents as AI_PENDING immediately so the frontend sees state change
+    await this.prisma.$transaction([
+      this.prisma.documentVersion.updateMany({
+        where: { id: { in: versions.map((v) => v.id) } },
+        data: { status: DocumentStatus.AI_PENDING },
+      }),
+      this.prisma.document.updateMany({
+        where: { id: { in: versions.map((v) => v.documentId) } },
+        data: { status: DocumentStatus.AI_PENDING },
+      }),
+    ]);
+
+    // Fire analysis for each in the background — intentionally not awaited
+    const correlationId = context.correlationId;
+    void Promise.allSettled(
+      versions.map((v) =>
+        this.analyzeDocumentVersion(v.id, { actorId: context.actorId, correlationId }).catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error(`[batchQueue] analysis failed for ${v.id}: ${message}`);
+        }),
+      ),
+    );
+
+    return { queued: versions.length, skipped: documentVersionIds.length - versions.length };
+  }
+
   async listResults(limit = 25, offset = 0) {
     const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
     const safeOffset = Math.max(Number(offset) || 0, 0);
@@ -204,6 +299,19 @@ export class AnalysisService {
     ]);
 
     return { items: items.map((item) => this.serializeAiResult(item)), total, limit: safeLimit, offset: safeOffset };
+  }
+
+  private async getActivePromptTemplateVersion(actorId?: string) {
+    const activeVersions = await this.prisma.promptTemplateVersion.findMany({
+      where: { status: PromptStatus.ACTIVE },
+      include: { promptTemplate: true },
+    });
+
+    if (activeVersions.length) {
+      return activeVersions.sort((left, right) => right.promptTemplate.updatedAt.getTime() - left.promptTemplate.updatedAt.getTime())[0];
+    }
+
+    return this.ensureDefaultPromptTemplateVersion(actorId);
   }
 
   private async ensureDefaultPromptTemplateVersion(actorId?: string) {
@@ -226,7 +334,9 @@ export class AnalysisService {
             status: PromptStatus.ACTIVE,
             createdById: actorId,
             variables: ['documentTitle', 'ocrText'],
-            templateText: 'Extract regulatory rules from {{documentTitle}} and {{ocrText}}. Return JSON with outcome, summary, confidence, rules, and notRelevantReason.',
+            aiProvider: this.aiConfig.provider,
+            aiModel: this.aiConfig.model,
+            templateText: 'Document title: {{documentTitle}}\n\nExtract compliance rules, prohibitions, conditions, citations, and risk levels from this source document. If the document is not relevant to compliance rule extraction, return outcome NOT_RELEVANT and explain why. Use this JSON shape exactly: {"outcome":"RULES_FOUND|NO_RULES_FOUND|NOT_RELEVANT","summary":"...","confidence":0.0,"rules":[{"ruleCode":"R-001","title":"...","description":"...","condition":"...","prohibition":"...","riskLevel":"HIGH|MEDIUM|LOW|INFO","sourceReferences":[{"page":1,"quote":"..."}]}],"notRelevantReason":"..."}.\n\nOCR text:\n{{ocrText}}',
           },
         },
       },
@@ -236,9 +346,15 @@ export class AnalysisService {
     return promptTemplate.versions[0];
   }
 
-  private renderRuleExtractionPrompt(title: string, ocrText: string) {
+  private renderPromptTemplate(templateText: string, title: string, ocrText: string) {
     const trimmedText = ocrText.slice(0, 80_000);
-    return `Document title: ${title}\n\nExtract compliance rules, prohibitions, conditions, citations, and risk levels from this source document. If the document is not relevant to compliance rule extraction, return outcome NOT_RELEVANT and explain why. Use this JSON shape exactly: {"outcome":"RULES_FOUND|NO_RULES_FOUND|NOT_RELEVANT","summary":"...","confidence":0.0,"rules":[{"ruleCode":"R-001","title":"...","description":"...","condition":"...","prohibition":"...","riskLevel":"HIGH|MEDIUM|LOW|INFO","sourceReferences":[{"page":1,"quote":"..."}]}],"notRelevantReason":"..."}.\n\nOCR text:\n${trimmedText}`;
+    const values: Record<string, string> = {
+      documentTitle: title,
+      ocrText: trimmedText,
+      textLength: String(ocrText.length),
+    };
+
+    return templateText.replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (match, key: string) => values[key] ?? match);
   }
 
   private parseAnalysis(content: string): ParsedAnalysisResult {

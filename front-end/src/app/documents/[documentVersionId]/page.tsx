@@ -1,12 +1,43 @@
-import { ArrowLeft, ExternalLink, FileText } from 'lucide-react';
+import { ArrowLeft, ExternalLink, FileText, RefreshCw, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
-import { apiBaseUrl } from '@/lib/api-client';
-import { getDocumentDetail, getOcrText } from '@/lib/api/documents';
-import { formatBytes, formatDateTime, shortHash } from '@/lib/format';
+import { getDocumentDetail, getOcrText, refetchDocumentSource, reuploadDocumentVersion } from '@/lib/api/documents';
+import { formatBytes, formatDate, formatDateTime, shortHash } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
+
+async function reuploadVersionAction(formData: FormData) {
+  'use server';
+
+  const documentVersionId = formData.get('documentVersionId')?.toString();
+  const file = formData.get('file');
+  if (!documentVersionId || !(file instanceof File) || file.size === 0) return;
+
+  const title = formData.get('title')?.toString().trim() || file.name;
+  const contentBase64 = Buffer.from(await file.arrayBuffer()).toString('base64');
+  const result = await reuploadDocumentVersion(documentVersionId, { title, fileName: file.name, mimeType: file.type || 'application/pdf', contentBase64 });
+
+  revalidatePath('/documents');
+  revalidatePath('/dashboard');
+  revalidatePath('/review');
+  redirect(`/documents/${result.documentVersionId ?? documentVersionId}`);
+}
+
+async function refetchSourceAction(formData: FormData) {
+  'use server';
+
+  const documentVersionId = formData.get('documentVersionId')?.toString();
+  if (!documentVersionId) return;
+
+  const result = await refetchDocumentSource(documentVersionId);
+  revalidatePath('/documents');
+  revalidatePath('/dashboard');
+  revalidatePath('/review');
+  redirect(`/documents/${result.documentVersionId ?? documentVersionId}`);
+}
 
 export default async function DocumentDetailPage({ params }: { params: Promise<{ documentVersionId: string }> }) {
   const { documentVersionId } = await params;
@@ -43,14 +74,37 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
 
             <dl className="mt-5 space-y-3 text-sm">
               <div><dt className="text-t3">Source type</dt><dd className="mt-1 text-t1">{documentVersion.document.sourceType}</dd></div>
-              <div><dt className="text-t3">Domain</dt><dd className="mt-1 text-t1">{documentVersion.document.domain ?? 'Unassigned'}</dd></div>
               <div><dt className="text-t3">File SHA-256</dt><dd className="mt-1 break-all font-mono text-xs text-t2">{documentVersion.fileSha256 ?? 'none'}</dd></div>
               <div><dt className="text-t3">Content SHA-256</dt><dd className="mt-1 break-all font-mono text-xs text-t2">{documentVersion.contentSha256 ?? 'none'}</dd></div>
+              <div><dt className="text-t3">Document date</dt><dd className="mt-1 text-t1">{documentVersion.sourceDocumentDate ? formatDate(documentVersion.sourceDocumentDate) : documentVersion.sourceDocumentDateText ?? 'Not recorded'}</dd></div>
               <div><dt className="text-t3">Imported</dt><dd className="mt-1 text-t1">{formatDateTime(documentVersion.createdAt)}</dd></div>
               {documentVersion.sourceUrl ? (
                 <div><dt className="text-t3">Source URL</dt><dd className="mt-1"><a className="inline-flex items-center gap-1 break-all text-accent hover:underline" href={documentVersion.sourceUrl} target="_blank" rel="noreferrer">Open source PDF <ExternalLink size={13} /></a></dd></div>
               ) : null}
             </dl>
+
+            <div className="mt-5 border-t border-border pt-4">
+              <h2 className="font-semibold text-t1">Edit</h2>
+              <form action={reuploadVersionAction} className="mt-3 grid gap-3">
+                <input type="hidden" name="documentVersionId" value={documentVersion.id} />
+                <label className="grid gap-1 text-sm text-t2">
+                  <span className="text-xs font-medium uppercase tracking-wide text-t3">Title</span>
+                  <input name="title" defaultValue={documentVersion.title} className="rounded-md border border-border bg-raised px-3 py-2 text-sm text-t1" />
+                </label>
+                <label className="grid gap-1 text-sm text-t2">
+                  <span className="text-xs font-medium uppercase tracking-wide text-t3">PDF file</span>
+                  <input required name="file" type="file" accept="application/pdf,.pdf" className="rounded-md border border-border bg-raised px-3 py-2 text-sm text-t1" />
+                </label>
+                <button className="inline-flex items-center justify-center gap-2 rounded-md bg-accent px-3 py-2 text-sm font-medium text-white"><UploadCloud size={15} />Re-upload</button>
+              </form>
+
+              {documentVersion.sourceUrl ? (
+                <form action={refetchSourceAction} className="mt-3">
+                  <input type="hidden" name="documentVersionId" value={documentVersion.id} />
+                  <button className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-t2 hover:bg-raised"><RefreshCw size={15} />Fetch source URL</button>
+                </form>
+              ) : null}
+            </div>
           </section>
 
           <section className="overflow-hidden rounded-lg border border-border bg-panel shadow-panel">

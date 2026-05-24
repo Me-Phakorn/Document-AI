@@ -1,6 +1,7 @@
-import { Controller, Get, Headers, Inject, Param, Post, Query } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Post, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'node:crypto';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
 import { RulebookService } from './rulebook.service';
 
@@ -26,7 +27,7 @@ export class RulebookController {
   @Post('versions/:rulebookVersionId/publish')
   @ApiOperation({ summary: 'Publish an approved rulebook version and supersede older published versions' })
   @ApiOkResponse({ description: 'Published rulebook version.' })
-  publish(@Param('rulebookVersionId') rulebookVersionId: string, @Headers('x-actor-id') actorId: string | undefined, @Headers('x-correlation-id') correlationId: string | undefined) {
+  publish(@Param('rulebookVersionId') rulebookVersionId: string, @CurrentUser('id') actorId: string, @Query('correlationId') correlationId: string | undefined) {
     return this.rulebook.publish(rulebookVersionId, { actorId, correlationId: correlationId ?? randomUUID() });
   }
 }

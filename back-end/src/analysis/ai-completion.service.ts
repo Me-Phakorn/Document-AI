@@ -29,6 +29,7 @@ export class AiCompletionService implements AiProvider {
       return this.getProvider(fallbackProvider).createChatCompletion({
         ...input,
         fallbackFromProvider: provider,
+        model: undefined,
       });
     }
   }

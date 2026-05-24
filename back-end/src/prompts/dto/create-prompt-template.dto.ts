@@ -24,6 +24,12 @@ export class CreatePromptTemplateDto {
   @IsString()
   templateText!: string;
 
+  @ApiPropertyOptional({ type: String, example: 'anthropic/claude-3.5-sonnet' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(180)
+  aiModel?: string;
+
   @ApiPropertyOptional({ type: [String], example: ['documentTitle', 'ocrText'] })
   @IsOptional()
   @IsArray()

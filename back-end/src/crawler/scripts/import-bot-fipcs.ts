@@ -2,6 +2,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import {
   DocumentStatus,
   OcrStatus,
+  Prisma,
   PrismaClient,
   SourceType,
   StoredObjectLifecycleStatus,
@@ -12,21 +13,19 @@ import { Client as MinioClient } from 'minio';
 import { PDFParse } from 'pdf-parse';
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { basename, extname, resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-
-interface BotDocumentLink {
-  listPage: number;
-  packId: string;
-  pdfUrl: string;
-  title: string;
-}
+import { extractBotFipcsPdfLinks, type BotFipcsDocumentLink } from '../bot-fipcs-parser';
 
 interface CrawlOptions {
   sourceId?: string;
-  maxPages: number;
+  startPage: number;
+  endPage?: number;
+  maxPagesCap: number;
   maxDocuments?: number;
   sourceUrl: string;
+  /** Path to a JSON file containing pre-crawled BotFipcsDocumentLink[] to import directly. */
+  linksFile?: string;
 }
 
 interface PageState {
@@ -60,13 +59,19 @@ async function main() {
   await ensureBucket(buckets.documents);
   await ensureBucket(buckets.ocr);
 
-  const websiteSource = await resolveWebsiteSource(options.sourceId, options.sourceUrl);
+  const websiteSource = await resolveWebsiteSource(options);
   const websiteScan = await prisma.websiteScan.create({
     data: {
       websiteSourceId: websiteSource.id,
       status: WebsiteScanStatus.SCANNING,
       startedAt: new Date(),
-      metadata: { maxPages: options.maxPages, maxDocuments: options.maxDocuments ?? null },
+      metadata: {
+        startPage: options.startPage,
+        endPage: options.endPage ?? null,
+        maxPagesCap: options.maxPagesCap,
+        maxDocuments: options.maxDocuments ?? null,
+        linksFile: options.linksFile ?? null,
+      },
     },
   });
 
@@ -75,13 +80,40 @@ async function main() {
   let discoveredCount = 0;
 
   try {
-    const links = await crawlBotFipcsLinks(options);
+    let links: BotFipcsDocumentLink[];
+    if (options.linksFile) {
+      const raw = readFileSync(options.linksFile, 'utf8');
+      const parsed = JSON.parse(raw) as Array<{
+        pdfUrl: string; title: string; listPage?: number; packId?: string;
+        documentType?: string; sourceDocumentDateText?: string; sourceDocumentDate?: string;
+        statusText?: string; language?: string; relatedDocumentUrl?: string;
+      }>;
+      links = parsed.map((item) => ({
+        pdfUrl: item.pdfUrl,
+        title: item.title,
+        listPage: item.listPage ?? 1,
+        packId: item.packId ?? '',
+        documentType: item.documentType ?? null,
+        sourceDocumentDate: item.sourceDocumentDate ? new Date(item.sourceDocumentDate) : null,
+        sourceDocumentDateText: item.sourceDocumentDateText ?? null,
+        statusText: item.statusText ?? null,
+        language: item.language ?? null,
+        relatedDocumentUrl: item.relatedDocumentUrl ?? null,
+      }));
+    } else {
+      links = await crawlBotFipcsLinks(options);
+    }
     discoveredCount = links.length;
 
+    const duplicates: DuplicateInfo[] = [];
     for (const link of links) {
-      const result = await importPdfLink(link, websiteSource.id, websiteScan.id, actor?.id, correlationId);
-      if (result === 'IMPORTED') importedCount += 1;
-      if (result === 'DUPLICATE') duplicateCount += 1;
+      const result = await importPdfLink(link, websiteSource.id, websiteScan.id, websiteSource.domain ?? 'banking-regulation', actor?.id, correlationId);
+      if (result === 'IMPORTED') {
+        importedCount += 1;
+      } else {
+        duplicateCount += 1;
+        duplicates.push(result);
+      }
       await delay(200);
     }
 
@@ -93,6 +125,14 @@ async function main() {
         discoveredCount,
         importedCount,
         duplicateCount,
+        metadata: {
+          startPage: options.startPage,
+          endPage: options.endPage ?? null,
+          maxPagesCap: options.maxPagesCap,
+          maxDocuments: options.maxDocuments ?? null,
+          linksFile: options.linksFile ?? null,
+          duplicates: JSON.parse(JSON.stringify(duplicates.slice(0, 500))),
+        },
       },
     });
 
@@ -115,11 +155,15 @@ async function main() {
 
 async function crawlBotFipcsLinks(options: CrawlOptions) {
   const state = await fetchInitialPage(options.sourceUrl);
-  const links: BotDocumentLink[] = [];
+  const links: BotFipcsDocumentLink[] = [];
+  const maxDocuments = options.maxDocuments;
 
-  for (let page = 1; page <= options.maxPages; page += 1) {
-    links.push(...extractPdfLinks(state.html, page));
-    if (page === options.maxPages) break;
+  for (let page = 1; page <= options.maxPagesCap; page += 1) {
+    if (page >= options.startPage && (!options.endPage || page <= options.endPage)) {
+      links.push(...extractBotFipcsPdfLinks(state.html, page));
+    }
+    if (maxDocuments && dedupeLinks(links).length >= maxDocuments) break;
+    if (options.endPage && page >= options.endPage) break;
 
     const nextTarget = extractNextPostbackTarget(state.html);
     if (!nextTarget) break;
@@ -131,13 +175,23 @@ async function crawlBotFipcsLinks(options: CrawlOptions) {
   }
 
   const uniqueLinks = dedupeLinks(links);
-  return options.maxDocuments ? uniqueLinks.slice(0, options.maxDocuments) : uniqueLinks;
+  return maxDocuments ? uniqueLinks.slice(0, maxDocuments) : uniqueLinks;
+}
+
+interface DuplicateInfo {
+  title: string;
+  pdfUrl: string;
+  existingDocumentId: string;
+  existingDocumentVersionId: string;
+  existingDocumentTitle: string;
+  reason: 'url_match' | 'file_hash' | 'content_hash';
 }
 
 async function importPdfLink(
-  link: BotDocumentLink,
+  link: BotFipcsDocumentLink,
   websiteSourceId: string,
   websiteScanId: string,
+  domain: string,
   actorId: string | undefined,
   correlationId: string,
 ) {
@@ -147,17 +201,20 @@ async function importPdfLink(
   const fileSha256 = sha256Buffer(pdfBuffer);
 
   if (existingByUrl?.fileSha256 === fileSha256) {
-    return 'DUPLICATE' as const;
+    await refreshDuplicateMetadata(existingByUrl, link, websiteSourceId, websiteScanId, actorId, correlationId);
+    return { title: link.title, pdfUrl: link.pdfUrl, existingDocumentId: existingByUrl.documentId, existingDocumentVersionId: existingByUrl.id, existingDocumentTitle: existingByUrl.title || '', reason: 'url_match' as const };
   }
 
   const extracted = await extractPdfText(pdfBuffer);
   const normalizedText = normalizeText(extracted.text);
-  const contentSha256 = normalizedText ? sha256(normalizedText) : undefined;
+  const contentSha256 = normalizedText.length >= 500 ? sha256(normalizedText) : undefined;
   const existingByFile = await prisma.documentVersion.findFirst({ where: { fileSha256 } });
   const existingByContent = contentSha256 ? await prisma.documentVersion.findFirst({ where: { contentSha256 } }) : null;
 
   if (!existingByUrl && (existingByFile || existingByContent)) {
-    return 'DUPLICATE' as const;
+    const existingVersion = existingByFile ?? existingByContent!;
+    const reason = existingByFile ? 'file_hash' as const : 'content_hash' as const;
+    return { title: link.title, pdfUrl: link.pdfUrl, existingDocumentId: existingVersion.documentId, existingDocumentVersionId: existingVersion.id, existingDocumentTitle: existingVersion.title || '', reason };
   }
 
   const documentId = existingByUrl?.documentId ?? randomUUID();
@@ -193,7 +250,7 @@ async function importPdfLink(
         data: {
           id: documentId,
           title: link.title,
-          domain: 'banking-regulation',
+          domain,
           sourceType: SourceType.WEBSITE_SCAN,
           status: documentStatus,
           ownerId: actorId,
@@ -209,6 +266,8 @@ async function importPdfLink(
         title: link.title,
         sourceUrl: link.pdfUrl,
         sourceUrlHash,
+        sourceDocumentDate: link.sourceDocumentDate ?? undefined,
+        sourceDocumentDateText: link.sourceDocumentDateText,
         fileName: basename(new URL(link.pdfUrl).pathname),
         mimeType: 'application/pdf',
         byteSize: BigInt(pdfBuffer.byteLength),
@@ -231,7 +290,19 @@ async function importPdfLink(
         ownerType: 'DocumentVersion',
         ownerId: documentVersionId,
         lifecycleStatus: StoredObjectLifecycleStatus.CURRENT,
-        metadata: { pdfUrl: link.pdfUrl, listPage: link.listPage, packId: link.packId, websiteSourceId, websiteScanId },
+        metadata: {
+          pdfUrl: link.pdfUrl,
+          listPage: link.listPage,
+          packId: link.packId,
+          websiteSourceId,
+          websiteScanId,
+          documentType: link.documentType,
+          sourceDocumentDate: link.sourceDocumentDate?.toISOString() ?? null,
+          sourceDocumentDateText: link.sourceDocumentDateText,
+          statusText: link.statusText,
+          language: link.language,
+          relatedDocumentUrl: link.relatedDocumentUrl,
+        },
       },
     });
 
@@ -279,14 +350,126 @@ async function importPdfLink(
           ocrStatus,
           originalObjectId: originalObject.id,
           textObjectId: textObject.id,
+          sourceDocumentDate: link.sourceDocumentDate?.toISOString() ?? null,
+          sourceDocumentDateText: link.sourceDocumentDateText,
         },
         correlationId,
-        requestMetadata: { websiteSourceId, websiteScanId, sourceUrl: link.pdfUrl, listPage: link.listPage, packId: link.packId },
+        requestMetadata: {
+          websiteSourceId,
+          websiteScanId,
+          sourceUrl: link.pdfUrl,
+          listPage: link.listPage,
+          packId: link.packId,
+          documentType: link.documentType,
+          sourceDocumentDate: link.sourceDocumentDate?.toISOString() ?? null,
+          sourceDocumentDateText: link.sourceDocumentDateText,
+        },
       },
     });
   });
 
   return 'IMPORTED' as const;
+}
+
+async function refreshDuplicateMetadata(
+  existing: { id: string; documentId: string; title: string; sourceDocumentDate: Date | null; sourceDocumentDateText: string | null },
+  link: BotFipcsDocumentLink,
+  websiteSourceId: string,
+  websiteScanId: string,
+  actorId: string | undefined,
+  correlationId: string,
+) {
+  const documentVersionUpdate: Prisma.DocumentVersionUpdateInput = {};
+  if (isFallbackTitle(existing.title) && !isFallbackTitle(link.title)) {
+    documentVersionUpdate.title = link.title;
+  }
+  if (!existing.sourceDocumentDate && link.sourceDocumentDate) {
+    documentVersionUpdate.sourceDocumentDate = link.sourceDocumentDate;
+  }
+  if (!existing.sourceDocumentDateText && link.sourceDocumentDateText) {
+    documentVersionUpdate.sourceDocumentDateText = link.sourceDocumentDateText;
+  }
+
+  const hasDocumentVersionUpdate = Object.keys(documentVersionUpdate).length > 0;
+  if (!hasDocumentVersionUpdate) {
+    return;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.documentVersion.update({ where: { id: existing.id }, data: documentVersionUpdate });
+
+    if (documentVersionUpdate.title) {
+      await tx.document.update({ where: { id: existing.documentId }, data: { title: link.title } });
+    }
+
+    const originalObject = await tx.storedObject.findFirst({ where: { ownerType: 'DocumentVersion', ownerId: existing.id } });
+    if (originalObject) {
+      await tx.storedObject.update({
+        where: { id: originalObject.id },
+        data: {
+          metadata: mergeCrawlerObjectMetadata(originalObject.metadata, link, websiteSourceId, websiteScanId),
+        },
+      });
+    }
+
+    await tx.auditLog.create({
+      data: {
+        actorId,
+        action: 'BOT_FIPCS_DOCUMENT_METADATA_REFRESHED',
+        entityType: 'DocumentVersion',
+        entityId: existing.id,
+        previousState: {
+          title: existing.title,
+          sourceDocumentDate: existing.sourceDocumentDate?.toISOString() ?? null,
+          sourceDocumentDateText: existing.sourceDocumentDateText,
+        },
+        nextState: {
+          title: typeof documentVersionUpdate.title === 'string' ? documentVersionUpdate.title : existing.title,
+          sourceDocumentDate: link.sourceDocumentDate?.toISOString() ?? existing.sourceDocumentDate?.toISOString() ?? null,
+          sourceDocumentDateText: link.sourceDocumentDateText ?? existing.sourceDocumentDateText,
+        },
+        correlationId,
+        requestMetadata: {
+          websiteSourceId,
+          websiteScanId,
+          sourceUrl: link.pdfUrl,
+          listPage: link.listPage,
+          packId: link.packId,
+          refreshReason: 'duplicate_source_metadata',
+        },
+      },
+    });
+  });
+}
+
+function mergeCrawlerObjectMetadata(metadata: unknown, link: BotFipcsDocumentLink, websiteSourceId: string, websiteScanId: string): Prisma.InputJsonObject {
+  const currentMetadata = toInputJsonObject(metadata);
+  return {
+    ...currentMetadata,
+    pdfUrl: link.pdfUrl,
+    listPage: link.listPage,
+    packId: link.packId,
+    websiteSourceId,
+    websiteScanId,
+    documentType: link.documentType,
+    sourceDocumentDate: link.sourceDocumentDate?.toISOString() ?? null,
+    sourceDocumentDateText: link.sourceDocumentDateText,
+    statusText: link.statusText,
+    language: link.language,
+    relatedDocumentUrl: link.relatedDocumentUrl,
+  };
+}
+
+function toInputJsonObject(value: unknown): Prisma.InputJsonObject {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return {};
+  }
+
+  return value as Prisma.InputJsonObject;
+}
+
+function isFallbackTitle(value: string) {
+  return /^BOT FIPCS \d+$/i.test(value.trim());
 }
 
 async function fetchInitialPage(sourceUrl: string): Promise<PageState> {
@@ -323,26 +506,6 @@ async function fetchPostbackPage(sourceUrl: string, state: PageState, eventTarge
   const html = await response.text();
 
   return { cookies, hiddenFields: extractHiddenFields(html), html };
-}
-
-function extractPdfLinks(html: string, listPage: number): BotDocumentLink[] {
-  const decoded = decodeHtml(html);
-  const links: BotDocumentLink[] = [];
-  const pdfPattern = /href\s*=\s*['"]([^'"]+\.pdf(?:\?[^'"]*)?)['"]/gi;
-  let match: RegExpExecArray | null;
-
-  while ((match = pdfPattern.exec(decoded))) {
-    const pdfUrl = absoluteUrl(match[1]);
-    const packId = extractPackId(pdfUrl);
-    links.push({
-      listPage,
-      packId,
-      pdfUrl,
-      title: `BOT FIPCS ${packId || basename(new URL(pdfUrl).pathname, extname(new URL(pdfUrl).pathname))}`,
-    });
-  }
-
-  return links;
 }
 
 function extractNextPostbackTarget(html: string) {
@@ -397,21 +560,28 @@ async function ensureBucket(bucket: string) {
   }
 }
 
-async function resolveWebsiteSource(sourceId: string | undefined, sourceUrl: string) {
-  if (sourceId) {
-    const existingById = await prisma.websiteSource.findUnique({ where: { id: sourceId } });
+async function resolveWebsiteSource(options: CrawlOptions) {
+  if (options.sourceId) {
+    const existingById = await prisma.websiteSource.findUnique({ where: { id: options.sourceId } });
     if (existingById) return existingById;
   }
 
-  const existing = await prisma.websiteSource.findFirst({ where: { baseUrl: sourceUrl } });
+  const existing = await prisma.websiteSource.findFirst({ where: { baseUrl: options.sourceUrl } });
   if (existing) return existing;
 
   return prisma.websiteSource.create({
     data: {
       name: 'BOT FIPCS Thai Notices',
-      baseUrl: sourceUrl,
+      baseUrl: options.sourceUrl,
       domain: 'banking-regulation',
-      scanConfig: { strategy: 'bot-fipcs', maxDepth: 1, allowedHost: 'app.bot.or.th' },
+      scanConfig: {
+        strategy: 'bot-fipcs',
+        startPage: options.startPage,
+        endPage: options.endPage ?? null,
+        maxPages: options.endPage ? options.endPage - options.startPage + 1 : null,
+        maxPagesCap: options.maxPagesCap,
+        maxDocuments: options.maxDocuments ?? null,
+      },
     },
   });
 }
@@ -419,10 +589,24 @@ async function resolveWebsiteSource(sourceId: string | undefined, sourceUrl: str
 function parseOptions(): CrawlOptions {
   const sourceId = readArg('--source-id');
   const sourceUrl = readArg('--source-url') ?? 'https://app.bot.or.th/FIPCS/Thai/PFIPCS_list.aspx';
-  const maxPages = readIntegerArg('--pages', 2);
+  const linksFile = readArg('--links-file');
+  const startPage = readIntegerArg('--start-page', 1);
+  const legacyMaxPages = readOptionalIntegerArg('--pages');
+  const explicitEndPage = readOptionalIntegerArg('--end-page');
+  const endPage = explicitEndPage ?? (legacyMaxPages ? startPage + legacyMaxPages - 1 : undefined);
+  const maxPagesCap = readIntegerArg('--max-pages-cap', readIntegerEnv('CRAWLER_MAX_PAGES_CAP', 500));
   const maxDocuments = readOptionalIntegerArg('--max-documents');
 
-  return { sourceId, maxPages, maxDocuments, sourceUrl };
+  if (!linksFile) {
+    if (endPage && endPage < startPage) {
+      throw new Error('Crawler end page must be greater than or equal to the start page.');
+    }
+    if (startPage > maxPagesCap || (endPage && endPage > maxPagesCap)) {
+      throw new Error(`Crawler page range exceeds the configured page cap of ${maxPagesCap}.`);
+    }
+  }
+
+  return { sourceId, startPage, endPage, maxPagesCap, maxDocuments, sourceUrl, linksFile };
 }
 
 function readArg(name: string) {
@@ -518,22 +702,13 @@ function renderCookieHeader(cookies: Map<string, string>) {
     .join('; ');
 }
 
-function dedupeLinks(links: BotDocumentLink[]) {
+function dedupeLinks(links: BotFipcsDocumentLink[]) {
   const seen = new Set<string>();
   return links.filter((link) => {
     if (seen.has(link.pdfUrl)) return false;
     seen.add(link.pdfUrl);
     return true;
   });
-}
-
-function absoluteUrl(value: string) {
-  return new URL(value, 'https://app.bot.or.th/FIPCS/Thai/').toString();
-}
-
-function extractPackId(pdfUrl: string) {
-  const fileName = basename(new URL(pdfUrl).pathname);
-  return fileName.replace(/\.pdf$/i, '');
 }
 
 function decodeHtml(value: string) {

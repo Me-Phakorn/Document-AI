@@ -22,6 +22,7 @@ export interface AiConfigResponse {
   provider: string;
   fallbackProvider?: string;
   model: string;
+  modelOptions: string[];
   baseUrl: string;
   apiKeyConfigured: boolean;
   requestTimeoutMs: number;
@@ -45,4 +46,8 @@ export function listAnalysisResults(params: { limit?: number; offset?: number } 
 
 export function runDocumentAnalysis(documentVersionId: string) {
   return apiPost<AiAnalysisResultRecord>(`/analysis/document-versions/${documentVersionId}/run`);
+}
+
+export function batchQueueForAnalysis(documentVersionIds: string[]) {
+  return apiPost<{ queued: number; skipped: number }>('/analysis/batch-queue', { documentVersionIds });
 }

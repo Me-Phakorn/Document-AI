@@ -182,12 +182,14 @@ enum StoredObjectLifecycleStatus {
 }
 
 model User {
-  id          String   @id @default(uuid()) @db.Uuid
-  email       String   @unique
-  displayName String
-  role        UserRole @default(VIEWER)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid()) @db.Uuid
+  username     String?  @unique
+  email        String   @unique
+  displayName  String
+  passwordHash String?
+  role         UserRole @default(VIEWER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   documents Document[]
 }
@@ -218,6 +220,8 @@ model DocumentVersion {
   title        String
   sourceUrl    String?
   sourceUrlHash String?
+  sourceDocumentDate DateTime?
+  sourceDocumentDateText String?
   fileName     String?
   mimeType     String?
   byteSize     BigInt?
@@ -235,6 +239,7 @@ model DocumentVersion {
 
   @@unique([documentId, versionNumber])
   @@index([sourceUrlHash])
+  @@index([sourceDocumentDate, createdAt])
   @@index([fileSha256])
   @@index([contentSha256])
   @@index([status, createdAt])
@@ -330,6 +335,8 @@ model PromptTemplateVersion {
   status           PromptStatus   @default(DRAFT)
   templateText     String
   variables        String[]
+  aiProvider       String?
+  aiModel          String?
   createdById      String?        @db.Uuid
   createdAt        DateTime       @default(now())
 
@@ -337,6 +344,7 @@ model PromptTemplateVersion {
 
   @@unique([promptTemplateId, versionNumber])
   @@index([status, createdAt])
+  @@index([aiProvider, aiModel])
 }
 
 model PromptInstance {

@@ -29,7 +29,72 @@ export class RulebookService {
       this.prisma.masterRulebook.count(),
     ]);
 
-    return { items, total, limit, offset };
+    // Resolve source document for each version via the audit log.
+    // The audit record for 'AI_RESULT_APPROVED_RULEBOOK_VERSION_CREATED' stores
+    // { aiAnalysisResultId } in previousState, which lets us walk back to the document.
+    const allVersionIds = items.flatMap((rb) => rb.versions.map((v) => v.id));
+
+    const versionToDocInfo = new Map<string, { documentVersionId: string; documentId: string; documentVersionNumber: number; title: string }>();
+
+    if (allVersionIds.length > 0) {
+      // Step 1 — audit log: versionId → aiAnalysisResultId
+      const auditEntries = await this.prisma.auditLog.findMany({
+        where: {
+          action: 'AI_RESULT_APPROVED_RULEBOOK_VERSION_CREATED',
+          entityType: 'MasterRulebookVersion',
+          entityId: { in: allVersionIds },
+        },
+        select: { entityId: true, previousState: true },
+      });
+
+      const versionToAiId = new Map<string, string>();
+      for (const entry of auditEntries) {
+        const ps = entry.previousState as Record<string, unknown> | null;
+        if (ps && typeof ps.aiAnalysisResultId === 'string') {
+          versionToAiId.set(entry.entityId, ps.aiAnalysisResultId);
+        }
+      }
+
+      // Step 2 — AiAnalysisResult: aiResultId → documentVersion + document
+      const aiResultIds = Array.from(versionToAiId.values());
+      if (aiResultIds.length > 0) {
+        const aiResults = await this.prisma.aiAnalysisResult.findMany({
+          where: { id: { in: aiResultIds } },
+          include: { documentVersion: { include: { document: { select: { id: true, title: true } } } } },
+        });
+
+        const aiIdToDocInfo = new Map<string, { documentVersionId: string; documentId: string; documentVersionNumber: number; title: string }>();
+        for (const ar of aiResults) {
+          const dv = ar.documentVersion;
+          aiIdToDocInfo.set(ar.id, {
+            documentVersionId: dv.id,
+            documentId: dv.documentId,
+            documentVersionNumber: dv.versionNumber,
+            title: dv.document.title || dv.title || 'ไม่ระบุชื่อ',
+          });
+        }
+
+        for (const [versionId, aiId] of versionToAiId.entries()) {
+          const info = aiIdToDocInfo.get(aiId);
+          if (info) versionToDocInfo.set(versionId, info);
+        }
+      }
+    }
+
+    const enrichedItems = items.map((rulebook) => ({
+      ...rulebook,
+      versions: rulebook.versions.map((version) => {
+        const docInfo = versionToDocInfo.get(version.id);
+        return {
+          ...version,
+          sourceDocument: docInfo
+            ? { documentVersionId: docInfo.documentVersionId, documentId: docInfo.documentId, documentVersionNumber: docInfo.documentVersionNumber, title: docInfo.title }
+            : null,
+        };
+      }),
+    }));
+
+    return { items: enrichedItems, total, limit, offset };
   }
 
   async getVersion(rulebookVersionId: string) {

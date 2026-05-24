@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { DocumentStatus, Prisma, ReviewOutcome, ReviewStatus, ReviewType, RiskLevel, RulebookStatus } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { AnalysisService } from '../analysis/analysis.service';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -24,13 +25,18 @@ export class ReviewService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AnalysisService) private readonly analysisService: AnalysisService,
   ) {}
 
-  async list(query: PaginationQueryDto) {
+  async list(query: PaginationQueryDto, documentId?: string) {
     const limit = Math.min(Math.max(Number(query.limit) || 25, 1), 100);
     const offset = Math.max(Number(query.offset) || 0, 0);
+    const where: Prisma.ReviewItemWhereInput = documentId
+      ? { aiAnalysisResult: { documentVersion: { documentId } } }
+      : {};
     const [items, total] = await this.prisma.$transaction([
       this.prisma.reviewItem.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
         skip: offset,
         take: limit,
@@ -39,7 +45,7 @@ export class ReviewService {
           complianceCheck: { include: { results: { orderBy: { createdAt: 'desc' }, take: 1 } } },
         },
       }),
-      this.prisma.reviewItem.count(),
+      this.prisma.reviewItem.count({ where }),
     ]);
 
     return { items: items.map((item) => this.serializeReviewItem(item)), total, limit, offset };
@@ -84,7 +90,10 @@ export class ReviewService {
               condition: rule.condition,
               prohibition: rule.prohibition,
               riskLevel: this.toRiskLevel(rule.riskLevel),
-              sourceReferences: this.toJson(rule.sourceReferences, [{ documentVersionId: documentVersion.id, aiAnalysisResultId: aiAnalysisResult.id }]),
+              sourceReferences: [
+                  { documentVersionId: documentVersion.id, aiAnalysisResultId: aiAnalysisResult.id, documentTitle: document.title, documentId: document.id },
+                  ...(Array.isArray(rule.sourceReferences) ? (rule.sourceReferences as Prisma.InputJsonValue[]) : []),
+                ],
             })),
           },
         },
@@ -113,6 +122,45 @@ export class ReviewService {
 
       return rulebookVersion;
     });
+  }
+
+  async reReviewFromRejected(reviewItemId: string, context: ReviewContext) {
+    const reviewItem = await this.getReviewItem(reviewItemId);
+
+    if (reviewItem.status !== ReviewStatus.REQUEST_CHANGES) {
+      throw new BadRequestException({
+        code: 'REVIEW_ITEM_NOT_REJECTED',
+        message: 'Only review items with status REQUEST_CHANGES can be re-reviewed.',
+      });
+    }
+
+    const documentVersion = reviewItem.aiAnalysisResult?.documentVersion;
+    if (!documentVersion) {
+      throw new BadRequestException({
+        code: 'REVIEW_ITEM_NO_DOCUMENT',
+        message: 'Review item is not linked to a document version.',
+      });
+    }
+
+    if (!reviewItem.comment?.trim()) {
+      throw new BadRequestException({
+        code: 'REVIEWER_COMMENT_REQUIRED',
+        message: 'A reviewer comment must exist on the rejected review item before re-review can be triggered.',
+      });
+    }
+
+    // Mark old review item as superseded so it leaves the "request changes" queue
+    await this.prisma.reviewItem.update({
+      where: { id: reviewItemId },
+      data: { status: ReviewStatus.REJECTED },
+    });
+
+    return this.analysisService.reReviewDocumentVersion(
+      documentVersion.id,
+      reviewItem.comment,
+      reviewItem.roundNumber + 1,
+      { actorId: context.actorId, correlationId: context.correlationId },
+    );
   }
 
   async requestChanges(reviewItemId: string, comment: string | undefined, context: ReviewContext) {

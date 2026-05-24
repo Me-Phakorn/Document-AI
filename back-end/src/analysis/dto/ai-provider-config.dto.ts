@@ -10,6 +10,9 @@ export class AiProviderConfigDto {
   @ApiProperty({ type: String, example: 'openai/gpt-4o-mini' })
   model!: string;
 
+  @ApiProperty({ type: [String], example: ['openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet'] })
+  modelOptions!: string[];
+
   @ApiProperty({ type: String, example: 'https://openrouter.ai/api/v1' })
   baseUrl!: string;
 

@@ -38,3 +38,14 @@ export function confirmReviewNotRelevant(reviewItemId: string, comment?: string)
 export function markDocumentVersionNotRelevant(documentVersionId: string, comment?: string) {
   return apiPost(`/review/document-versions/${documentVersionId}/not-relevant`, { comment });
 }
+
+export function reReviewItem(reviewItemId: string) {
+  return apiPost<{ queued: true; documentVersionId: string; round: number }>(`/review/items/${reviewItemId}/re-review`, {});
+}
+
+/** Fetch all review items for a document (all rounds), ordered by roundNumber descending. */
+export function getReviewHistoryByDocument(documentId: string) {
+  return apiGet<{ items: ReviewItemRecord[]; total: number }>(
+    `/review/items?documentId=${encodeURIComponent(documentId)}&limit=100`,
+  );
+}

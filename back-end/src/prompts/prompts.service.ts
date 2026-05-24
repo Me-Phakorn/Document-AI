@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, PromptStatus } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
+import { AiConfigService } from '../analysis/ai-config.service';
 import { AuditService } from '../audit/audit.service';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -17,6 +18,7 @@ export class PromptsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AiConfigService) private readonly aiConfig: AiConfigService,
   ) {}
 
   async list(query: PaginationQueryDto) {
@@ -49,6 +51,8 @@ export class PromptsService {
               status: PromptStatus.DRAFT,
               templateText: dto.templateText,
               variables: dto.variables ?? [],
+              aiProvider: this.aiConfig.provider,
+              aiModel: this.normalizeModel(dto.aiModel),
               createdById: context.actorId,
             },
           },
@@ -82,6 +86,8 @@ export class PromptsService {
           status: PromptStatus.DRAFT,
           templateText: dto.templateText,
           variables: dto.variables ?? [],
+          aiProvider: this.aiConfig.provider,
+          aiModel: this.normalizeModel(dto.aiModel),
           createdById: context.actorId,
         },
       });
@@ -120,5 +126,9 @@ export class PromptsService {
       }, tx);
       return activated;
     });
+  }
+
+  private normalizeModel(value: string | undefined) {
+    return value?.trim() || this.aiConfig.model;
   }
 }

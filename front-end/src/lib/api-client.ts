@@ -1,3 +1,6 @@
+import { cookies } from 'next/headers';
+import { authTokenCookieName } from '@/lib/auth';
+
 export class ApiClientError extends Error {
   constructor(
     message: string,
@@ -10,12 +13,16 @@ export class ApiClientError extends Error {
 
 export const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1').replace(/\/$/, '');
 
+export function buildApiUrl(path: string) {
+  return `${apiBaseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
+  const response = await fetch(buildApiUrl(path), {
     cache: 'no-store',
     headers: {
       Accept: 'application/json',
-      ...getBasicAuthHeaders(),
+      ...(await getAuthHeaders()),
     },
   });
 
@@ -34,13 +41,13 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
+  const response = await fetch(buildApiUrl(path), {
     method: 'POST',
     cache: 'no-store',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      ...getBasicAuthHeaders(),
+      ...(await getAuthHeaders()),
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
@@ -59,31 +66,15 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function getBasicAuthHeaders(): Record<string, string> {
-  if (!readBoolean(process.env.BASIC_AUTH_ENABLED, true)) {
-    return {};
-  }
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(authTokenCookieName)?.value;
 
-  const username = process.env.BASIC_AUTH_USERNAME ?? fallbackCredential();
-  const password = process.env.BASIC_AUTH_PASSWORD ?? fallbackCredential();
-
-  if (!username || !password) {
+  if (!token) {
     return {};
   }
 
   return {
-    Authorization: `Basic ${Buffer.from(`${username}:${password}`, 'utf8').toString('base64')}`,
+    Authorization: `Bearer ${token}`,
   };
-}
-
-function readBoolean(value: string | undefined, defaultValue: boolean): boolean {
-  if (value === undefined) {
-    return defaultValue;
-  }
-
-  return !['0', 'false', 'no', 'off'].includes(value.toLowerCase());
-}
-
-function fallbackCredential(): string {
-  return process.env.NODE_ENV === 'production' ? '' : 'admin';
 }

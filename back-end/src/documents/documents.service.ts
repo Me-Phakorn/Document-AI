@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AiAnalysisStatus, DocumentStatus, OcrStatus, Prisma, StoredObjectLifecycleStatus } from '@prisma/client';
+import { AiAnalysisStatus, DocumentStatus, OcrStatus, Prisma, SourceType, StoredObjectLifecycleStatus } from '@prisma/client';
+import type { DocumentVersion } from '@prisma/client';
 import { createHash, randomUUID } from 'node:crypto';
 import { basename, extname } from 'node:path';
 import { PDFParse } from 'pdf-parse';
@@ -15,6 +16,24 @@ import { UploadDocumentDto } from './dto/upload-document.dto';
 interface RegisterContext {
   actorId?: string;
   correlationId: string;
+}
+
+interface CreateStoredDocumentVersionInput {
+  title: string;
+  domain?: string | null;
+  sourceType: SourceType;
+  sourceUrl?: string | null;
+  sourceDocumentDate?: string | Date | null;
+  sourceDocumentDateText?: string | null;
+  fileName: string;
+  pdfBuffer: Buffer;
+  extracted?: { pageCount: number; text: string };
+  existingLatest?: Pick<DocumentVersion, 'id' | 'documentId' | 'versionNumber' | 'fileSha256'>;
+  context: RegisterContext;
+  auditAction: string;
+  uploadMode: string;
+  outcome: 'CREATED' | 'NEW_VERSION';
+  requestMetadata?: Record<string, string | number | boolean | null>;
 }
 
 @Injectable()
@@ -32,18 +51,36 @@ export class DocumentsService {
     private readonly config: ConfigService,
   ) {}
 
-  async list(query: PaginationQueryDto) {
+  async list(query: PaginationQueryDto & { status?: DocumentStatus; search?: string; ignore?: string }) {
     const limit = Math.min(Math.max(Number(query.limit) || 25, 1), 100);
     const offset = Math.max(Number(query.offset) || 0, 0);
 
+    // Parse comma-separated ignore list and keep only valid enum values
+    const validStatuses = new Set(Object.values(DocumentStatus));
+    const excludeStatuses = (query.ignore ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s): s is DocumentStatus => validStatuses.has(s as DocumentStatus));
+
+    const where: Prisma.DocumentVersionWhereInput = {};
+    if (query.status) {
+      where.status = query.status;
+    } else if (excludeStatuses.length > 0) {
+      where.status = { notIn: excludeStatuses };
+    }
+    if (query.search?.trim()) {
+      where.title = { contains: query.search.trim(), mode: 'insensitive' };
+    }
+
     const [items, total] = await this.prisma.$transaction([
       this.prisma.documentVersion.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
         skip: offset,
         take: limit,
         include: { document: true },
       }),
-      this.prisma.documentVersion.count(),
+      this.prisma.documentVersion.count({ where }),
     ]);
 
     return { items: items.map((item) => this.serializeDocumentVersion(item)), total, limit, offset };
@@ -191,6 +228,8 @@ export class DocumentsService {
             title: dto.title,
             sourceUrl: dto.sourceUrl,
             sourceUrlHash,
+            sourceDocumentDate: dto.sourceDocumentDate,
+            sourceDocumentDateText: dto.sourceDocumentDateText,
             fileName: dto.fileName,
             mimeType: dto.mimeType,
             byteSize: dto.byteSize ? BigInt(dto.byteSize) : undefined,
@@ -247,6 +286,8 @@ export class DocumentsService {
           title: dto.title,
           sourceUrl: dto.sourceUrl,
           sourceUrlHash,
+          sourceDocumentDate: dto.sourceDocumentDate,
+          sourceDocumentDateText: dto.sourceDocumentDateText,
           fileName: dto.fileName,
           mimeType: dto.mimeType,
           byteSize: dto.byteSize ? BigInt(dto.byteSize) : undefined,
@@ -294,8 +335,7 @@ export class DocumentsService {
     const fileSha256 = this.sha256Buffer(pdfBuffer);
     const extracted = await this.extractPdfText(pdfBuffer);
     const normalizedText = this.normalizeText(extracted.text);
-    const textBuffer = Buffer.from(normalizedText, 'utf8');
-    const contentSha256 = normalizedText ? this.sha256(normalizedText) : undefined;
+    const contentSha256 = normalizedText.length >= 500 ? this.sha256(normalizedText) : undefined;
     const sourceUrlHash = dto.sourceUrl ? this.sha256(dto.sourceUrl.trim()) : undefined;
     const existingByUrl = sourceUrlHash ? await this.prisma.documentVersion.findFirst({ where: { sourceUrlHash, isLatest: true } }) : null;
 
@@ -310,10 +350,106 @@ export class DocumentsService {
       return { outcome: 'DUPLICATE', reason: 'A PDF with the same binary or extracted content hash already exists.', documentId: duplicate?.documentId, documentVersionId: duplicate?.id };
     }
 
-    const documentId = existingByUrl?.documentId ?? randomUUID();
+    return this.createStoredDocumentVersion({
+      title: dto.title,
+      domain: dto.domain,
+      sourceType: dto.sourceType,
+      sourceUrl: dto.sourceUrl,
+      sourceDocumentDate: dto.sourceDocumentDate,
+      sourceDocumentDateText: dto.sourceDocumentDateText,
+      fileName: dto.fileName,
+      pdfBuffer,
+      extracted,
+      existingLatest: existingByUrl ?? undefined,
+      context,
+      auditAction: existingByUrl ? 'DOCUMENT_VERSION_UPLOADED_FROM_CHANGED_SOURCE_URL' : 'DOCUMENT_UPLOADED',
+      uploadMode: 'admin_base64_pdf',
+      outcome: existingByUrl ? 'NEW_VERSION' : 'CREATED',
+      requestMetadata: { fileName: dto.fileName },
+    });
+  }
+
+  async reupload(documentVersionId: string, dto: UploadDocumentDto, context: RegisterContext) {
+    const baseVersion = await this.prisma.documentVersion.findUnique({ where: { id: documentVersionId }, include: { document: true } });
+    if (!baseVersion) {
+      throw new NotFoundException({ code: 'DOCUMENT_VERSION_NOT_FOUND', message: 'Document version was not found.' });
+    }
+
+    const pdfBuffer = this.decodeBase64(dto.contentBase64);
+    if (!pdfBuffer.length) {
+      throw new BadRequestException({ code: 'EMPTY_UPLOAD', message: 'Uploaded PDF content is empty.' });
+    }
+
+    const mimeType = dto.mimeType ?? 'application/pdf';
+    if (mimeType !== 'application/pdf' && !dto.fileName.toLowerCase().endsWith('.pdf')) {
+      throw new BadRequestException({ code: 'UNSUPPORTED_DOCUMENT_TYPE', message: 'Only PDF uploads are currently accepted.' });
+    }
+
+    const latestVersion = await this.findLatestDocumentVersion(baseVersion.documentId);
+
+    return this.createStoredDocumentVersion({
+      title: dto.title || latestVersion?.title || baseVersion.title,
+      domain: dto.domain ?? latestVersion?.document.domain ?? baseVersion.document.domain,
+      sourceType: latestVersion?.document.sourceType ?? baseVersion.document.sourceType,
+      sourceUrl: dto.sourceUrl ?? latestVersion?.sourceUrl ?? baseVersion.sourceUrl,
+      sourceDocumentDate: dto.sourceDocumentDate ?? latestVersion?.sourceDocumentDate ?? baseVersion.sourceDocumentDate,
+      sourceDocumentDateText: dto.sourceDocumentDateText ?? latestVersion?.sourceDocumentDateText ?? baseVersion.sourceDocumentDateText,
+      fileName: dto.fileName,
+      pdfBuffer,
+      existingLatest: latestVersion ?? baseVersion,
+      context,
+      auditAction: 'DOCUMENT_VERSION_REUPLOADED',
+      uploadMode: 'admin_reupload_pdf',
+      outcome: 'NEW_VERSION',
+      requestMetadata: { fileName: dto.fileName, reuploadedFromVersionId: documentVersionId },
+    });
+  }
+
+  async refetchSource(documentVersionId: string, context: RegisterContext) {
+    const baseVersion = await this.prisma.documentVersion.findUnique({ where: { id: documentVersionId }, include: { document: true } });
+    if (!baseVersion) {
+      throw new NotFoundException({ code: 'DOCUMENT_VERSION_NOT_FOUND', message: 'Document version was not found.' });
+    }
+
+    if (!baseVersion.sourceUrl) {
+      throw new BadRequestException({ code: 'SOURCE_URL_NOT_AVAILABLE', message: 'This document version does not have a source URL to refetch.' });
+    }
+
+    const latestVersion = await this.findLatestDocumentVersion(baseVersion.documentId);
+    const downloaded = await this.downloadSourcePdf(baseVersion.sourceUrl, baseVersion.fileName ?? `${baseVersion.id}.pdf`);
+
+    return this.createStoredDocumentVersion({
+      title: latestVersion?.title ?? baseVersion.title,
+      domain: latestVersion?.document.domain ?? baseVersion.document.domain,
+      sourceType: latestVersion?.document.sourceType ?? baseVersion.document.sourceType,
+      sourceUrl: baseVersion.sourceUrl,
+      sourceDocumentDate: baseVersion.sourceDocumentDate,
+      sourceDocumentDateText: baseVersion.sourceDocumentDateText,
+      fileName: downloaded.fileName,
+      pdfBuffer: downloaded.pdfBuffer,
+      existingLatest: latestVersion ?? baseVersion,
+      context,
+      auditAction: 'DOCUMENT_VERSION_REFETCHED_FROM_SOURCE_URL',
+      uploadMode: 'source_url_refetch',
+      outcome: 'NEW_VERSION',
+      requestMetadata: { sourceUrl: baseVersion.sourceUrl, refetchedFromVersionId: documentVersionId, downloadedContentType: downloaded.contentType },
+    });
+  }
+
+
+  private async createStoredDocumentVersion(input: CreateStoredDocumentVersionInput) {
+    const pdfBuffer = input.pdfBuffer;
+    const fileSha256 = this.sha256Buffer(pdfBuffer);
+    const extracted = input.extracted ?? (await this.extractPdfText(pdfBuffer));
+    const normalizedText = this.normalizeText(extracted.text);
+    const textBuffer = Buffer.from(normalizedText, 'utf8');
+    const contentSha256 = normalizedText.length >= 500 ? this.sha256(normalizedText) : undefined;
+    const sourceUrl = input.sourceUrl?.trim() || undefined;
+    const sourceUrlHash = sourceUrl ? this.sha256(sourceUrl) : undefined;
+    const documentId = input.existingLatest?.documentId ?? randomUUID();
     const documentVersionId = randomUUID();
     const ocrArtifactId = randomUUID();
-    const extension = extname(dto.fileName).replace(/^\./, '') || 'pdf';
+    const extension = extname(input.fileName).replace(/^\./, '') || 'pdf';
     const originalObjectKey = this.objectKeys.documentOriginal({ documentId, documentVersionId, extension });
     const textObjectKey = this.objectKeys.ocrText(ocrArtifactId);
     const documentsBucket = this.config.get<string>('MINIO_BUCKET_DOCUMENTS', 'documents');
@@ -321,6 +457,8 @@ export class DocumentsService {
     const textSha256 = this.sha256Buffer(textBuffer);
     const ocrStatus = normalizedText ? OcrStatus.COMPLETED : OcrStatus.FAILED;
     const documentStatus = normalizedText ? DocumentStatus.OCR_COMPLETED : DocumentStatus.OCR_FAILED;
+    const sourceDocumentDate = this.toOptionalDate(input.sourceDocumentDate);
+    const sourceDocumentDateJson = this.toOptionalDateJson(input.sourceDocumentDate);
 
     await this.storage.putObject({
       bucket: documentsBucket,
@@ -338,23 +476,21 @@ export class DocumentsService {
     });
 
     const result = await this.prisma.$transaction(async (tx) => {
-      let versionNumber = 1;
-      let previousVersionId: string | undefined;
+      const versionNumber = input.existingLatest ? input.existingLatest.versionNumber + 1 : 1;
+      const previousVersionId = input.existingLatest?.id;
 
-      if (existingByUrl) {
-        versionNumber = existingByUrl.versionNumber + 1;
-        previousVersionId = existingByUrl.id;
-        await tx.documentVersion.update({ where: { id: existingByUrl.id }, data: { isLatest: false } });
-        await tx.document.update({ where: { id: existingByUrl.documentId }, data: { title: dto.title, domain: dto.domain, status: documentStatus } });
+      if (input.existingLatest) {
+        await tx.documentVersion.updateMany({ where: { documentId, isLatest: true }, data: { isLatest: false } });
+        await tx.document.update({ where: { id: documentId }, data: { title: input.title, domain: input.domain ?? undefined, status: documentStatus } });
       } else {
         await tx.document.create({
           data: {
             id: documentId,
-            title: dto.title,
-            domain: dto.domain,
-            sourceType: dto.sourceType,
+            title: input.title,
+            domain: input.domain ?? undefined,
+            sourceType: input.sourceType,
             status: documentStatus,
-            ownerId: context.actorId,
+            ownerId: input.context.actorId,
           },
         });
       }
@@ -364,10 +500,12 @@ export class DocumentsService {
           id: documentVersionId,
           documentId,
           versionNumber,
-          title: dto.title,
-          sourceUrl: dto.sourceUrl,
+          title: input.title,
+          sourceUrl,
           sourceUrlHash,
-          fileName: basename(dto.fileName),
+          sourceDocumentDate,
+          sourceDocumentDateText: input.sourceDocumentDateText,
+          fileName: basename(input.fileName),
           mimeType: 'application/pdf',
           byteSize: BigInt(pdfBuffer.byteLength),
           fileSha256,
@@ -382,14 +520,20 @@ export class DocumentsService {
         data: {
           bucket: documentsBucket,
           objectKey: originalObjectKey,
-          fileName: basename(dto.fileName),
+          fileName: basename(input.fileName),
           contentType: 'application/pdf',
           byteSize: BigInt(pdfBuffer.byteLength),
           sha256: fileSha256,
           ownerType: 'DocumentVersion',
           ownerId: documentVersionId,
           lifecycleStatus: StoredObjectLifecycleStatus.CURRENT,
-          metadata: { sourceUrl: dto.sourceUrl ?? null, uploadMode: 'admin_base64_pdf' },
+          metadata: {
+            sourceUrl: sourceUrl ?? null,
+            sourceDocumentDate: sourceDocumentDateJson,
+            sourceDocumentDateText: input.sourceDocumentDateText ?? null,
+            uploadMode: input.uploadMode,
+            ...input.requestMetadata,
+          },
         },
       });
 
@@ -425,14 +569,21 @@ export class DocumentsService {
 
       await this.audit.record(
         {
-          actorId: context.actorId,
-          action: existingByUrl ? 'DOCUMENT_VERSION_UPLOADED_FROM_CHANGED_SOURCE_URL' : 'DOCUMENT_UPLOADED',
+          actorId: input.context.actorId,
+          action: input.auditAction,
           entityType: 'DocumentVersion',
           entityId: documentVersion.id,
-          previousState: existingByUrl ? { documentVersionId: existingByUrl.id, fileSha256: existingByUrl.fileSha256 } : undefined,
-          nextState: { documentId, documentVersionId, status: documentStatus, ocrStatus, originalObjectId: originalObject.id, textObjectId: textObject.id },
-          correlationId: context.correlationId,
-          requestMetadata: { sourceUrl: dto.sourceUrl ?? null, fileName: dto.fileName },
+          previousState: input.existingLatest ? { documentVersionId: input.existingLatest.id, fileSha256: input.existingLatest.fileSha256 } : undefined,
+          nextState: { documentId, documentVersionId, status: documentStatus, ocrStatus, originalObjectId: originalObject.id, textObjectId: textObject.id, fileSha256 },
+          correlationId: input.context.correlationId,
+          requestMetadata: {
+            sourceUrl: sourceUrl ?? null,
+            sourceDocumentDate: sourceDocumentDateJson,
+            sourceDocumentDateText: input.sourceDocumentDateText ?? null,
+            fileName: input.fileName,
+            uploadMode: input.uploadMode,
+            ...input.requestMetadata,
+          },
         },
         tx,
       );
@@ -441,7 +592,7 @@ export class DocumentsService {
     });
 
     return {
-      outcome: existingByUrl ? 'NEW_VERSION' : 'CREATED',
+      outcome: input.outcome,
       documentId,
       documentVersionId,
       status: documentStatus,
@@ -450,6 +601,110 @@ export class DocumentsService {
       storedObjects: [this.serializeStoredObject(result.originalObject), this.serializeStoredObject(result.textObject)],
       ocrArtifact: result.ocrArtifact,
     };
+  }
+
+  private findLatestDocumentVersion(documentId: string) {
+    return this.prisma.documentVersion.findFirst({
+      where: { documentId },
+      orderBy: { versionNumber: 'desc' },
+      include: { document: true },
+    });
+  }
+
+  private async downloadSourcePdf(sourceUrl: string, fallbackFileName: string) {
+    const timeoutMs = this.readPositiveIntegerConfig('DOCUMENT_SOURCE_FETCH_TIMEOUT_MS', 60_000);
+    const abortController = new AbortController();
+    const timeout = setTimeout(() => abortController.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(sourceUrl, {
+        headers: {
+          Accept: 'application/pdf,*/*',
+          'User-Agent': 'DocAI document-source-refetch',
+        },
+        signal: abortController.signal,
+      });
+
+      if (!response.ok) {
+        throw new BadRequestException({ code: 'SOURCE_URL_DOWNLOAD_FAILED', message: `Source URL download failed with HTTP ${response.status}.` });
+      }
+
+      const contentType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() || 'application/pdf';
+      const pdfBuffer = Buffer.from(await response.arrayBuffer());
+      if (!pdfBuffer.length) {
+        throw new BadRequestException({ code: 'SOURCE_URL_EMPTY_RESPONSE', message: 'Source URL returned an empty file.' });
+      }
+
+      const looksLikePdf = contentType === 'application/pdf' || pdfBuffer.subarray(0, 4).toString('utf8') === '%PDF' || sourceUrl.toLowerCase().includes('.pdf');
+      if (!looksLikePdf) {
+        throw new BadRequestException({ code: 'SOURCE_URL_NOT_PDF', message: 'Source URL did not return a PDF file.' });
+      }
+
+      return {
+        pdfBuffer,
+        contentType,
+        fileName: this.fileNameFromContentDisposition(response.headers.get('content-disposition')) ?? this.fileNameFromUrl(sourceUrl, fallbackFileName),
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      const message = error instanceof Error && error.name === 'AbortError' ? 'Source URL download timed out.' : 'Source URL could not be downloaded.';
+      throw new BadRequestException({ code: 'SOURCE_URL_DOWNLOAD_FAILED', message });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private fileNameFromContentDisposition(value: string | null) {
+    if (!value) return undefined;
+
+    const encoded = /filename\*=UTF-8''([^;]+)/i.exec(value)?.[1];
+    const plain = /filename="?([^";]+)"?/i.exec(value)?.[1];
+    const candidate = encoded ?? plain;
+    if (!candidate) return undefined;
+
+    try {
+      return this.normalizePdfFileName(decodeURIComponent(candidate));
+    } catch {
+      return this.normalizePdfFileName(candidate);
+    }
+  }
+
+  private fileNameFromUrl(sourceUrl: string, fallbackFileName: string) {
+    try {
+      const url = new URL(sourceUrl);
+      const candidate = url.pathname.split('/').filter(Boolean).pop();
+      if (candidate) {
+        return this.normalizePdfFileName(decodeURIComponent(candidate));
+      }
+    } catch {
+      return this.normalizePdfFileName(fallbackFileName);
+    }
+
+    return this.normalizePdfFileName(fallbackFileName);
+  }
+
+  private normalizePdfFileName(value: string) {
+    const candidate = basename(value.replace(/\u0000/g, '').trim());
+    if (!candidate) return 'source.pdf';
+    return candidate.toLowerCase().endsWith('.pdf') ? candidate : `${candidate}.pdf`;
+  }
+
+  private toOptionalDate(value: string | Date | null | undefined) {
+    if (!value) return undefined;
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+  }
+
+  private toOptionalDateJson(value: string | Date | null | undefined) {
+    return this.toOptionalDate(value)?.toISOString() ?? null;
+  }
+
+  private readPositiveIntegerConfig(name: string, defaultValue: number) {
+    const value = Number(this.config.get<string>(name));
+    return Number.isInteger(value) && value > 0 ? value : defaultValue;
   }
 
   private async findDuplicate(sourceUrlHash?: string, fileSha256?: string, contentSha256?: string) {

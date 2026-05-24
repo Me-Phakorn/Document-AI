@@ -60,6 +60,8 @@ DocAI ควรใช้แนวทาง `operational admin workspace`:
 - `QueueProgress` สำหรับ crawler/OCR/AI/export jobs
 - `ReviewSplitPane` สำหรับ source text, AI result, citations, comments และ reviewer actions
 - `ArtifactPreview` สำหรับ PDF/OCR/text/source references
+- `TagCapsuleSelector` สำหรับ Prompt Library tags ที่เลือกได้หลายค่าและแสดง selected state ชัดเจน
+- `ModelSelect` สำหรับเลือก AI model จาก backend-sanitized OpenRouter model list โดยไม่ให้ผู้ใช้พิมพ์ custom model เอง
 - `AuditTimeline` สำหรับ state changes และ reviewer history
 
 ## Mapping To DocAI Screens
@@ -70,7 +72,7 @@ DocAI ควรใช้แนวทาง `operational admin workspace`:
 | Document Management | Tailwind Plus tables + shadcn table | เน้น filters, duplicate warnings, source URL/hash/version status |
 | Website Sources | Tailwind Plus table + queue progress cards | แสดง source config, last crawl, new PDFs, failures, rate limits |
 | AI Analysis Workspace | shadcn dashboard shell + split detail panel | แสดง document group progress, prompt version, AI job status, retry/failure actions |
-| Prompt Library | Tailwind Plus tables + version badges | แสดง active/draft/deprecated versions และ test runs |
+| Prompt Library | Compact form + capsule selector + version badges | Template form มีเฉพาะ Name, AI Model dropdown จาก OpenRouter, Tag capsules และ Text; แสดง active/draft/deprecated versions พร้อม provider/model ที่ผูกกับ version |
 | Review Center | Custom split pane inspired by shadcn shell | ต้องให้ดู source/OCR/AI/citations/comments พร้อมกัน จึงไม่ควรใช้ simple table อย่างเดียว |
 | Master Rulebook | Table + detail drawer + version timeline | ต้องเน้น immutable versions, variants, citations, publish status |
 | Compliance Checker | Form workspace + evidence panel + risk cards | เลือก rulebook version, upload/input content, show matched rules and reviewer gate |
@@ -84,6 +86,8 @@ DocAI ควรใช้แนวทาง `operational admin workspace`:
 - ไม่ใช้ card-heavy layout ทุกอย่างจนข้อมูลจริงถูกดันลงไปไกล
 - ไม่ copy proprietary template code โดยตรง เว้นแต่ license อนุญาตและ project ตัดสินใจแล้ว
 - ไม่สร้าง UI ที่อธิบาย feature ด้วย text ยาว ๆ ในหน้าจอจริง ให้ workflow และ labels ชัดพอแทน
+- ไม่ใส่ custom model text input ใน Prompt Library; model ต้องมาจาก dropdown ที่ backend ดึงจาก OpenRouter
+- ไม่ทำ Prompt Library เป็น settings/config page; หน้านี้คือ template editor สำหรับ prompt text และ metadata ที่ต้อง version/audit ได้
 
 ## Implementation Notes
 

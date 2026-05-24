@@ -21,14 +21,28 @@ export class CreateWebsiteSourceDto {
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(20)
+  @Max(500)
   maxPages?: number;
+
+  @ApiPropertyOptional({ type: Number, default: 1 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  startPage?: number;
 
   @ApiPropertyOptional({ type: Number })
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(200)
+  @Max(500)
+  endPage?: number;
+
+  @ApiPropertyOptional({ type: Number })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(500)
   maxDocuments?: number;
 
   @ApiPropertyOptional({ type: Boolean, default: true })

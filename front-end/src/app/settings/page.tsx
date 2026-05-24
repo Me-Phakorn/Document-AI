@@ -39,6 +39,7 @@ export default async function SettingsPage() {
             <div><dt className="text-t3">Primary</dt><dd className="font-medium text-t1">{aiConfig.provider}</dd></div>
             <div><dt className="text-t3">Fallback</dt><dd className="font-medium text-t1">{aiConfig.fallbackProvider ?? 'none'}</dd></div>
             <div><dt className="text-t3">Model</dt><dd className="font-medium text-t1">{aiConfig.model}</dd></div>
+            <div><dt className="text-t3">Model options</dt><dd className="font-medium text-t1">{aiConfig.modelOptions.length}</dd></div>
             <div><dt className="text-t3">OpenRouter key</dt><dd className="font-medium text-t1">{aiConfig.apiKeyConfigured ? 'configured' : 'missing'}</dd></div>
           </dl>
         </section>
@@ -50,7 +51,7 @@ export default async function SettingsPage() {
           </div>
           <div className="mt-4 flex items-center gap-2 rounded-md border border-border bg-raised px-3 py-2 text-sm text-t2">
             <CheckCircle2 size={15} className="text-green" aria-hidden="true" />
-            Basic Auth middleware protects the frontend and API.
+            Login page session stores a JWT token and frontend requests use Bearer auth for the API.
           </div>
           <dl className="mt-4 grid gap-3 text-sm">
             <div><dt className="text-t3">Claude Code command</dt><dd className="font-medium text-t1">{aiConfig.claudeCodeCommand}</dd></div>

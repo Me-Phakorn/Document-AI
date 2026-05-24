@@ -1,46 +1,23 @@
 import { apiGet, apiPost } from '@/lib/api-client';
+import type {
+  CreateWebsiteSourceRequest,
+  CrawledPdfLink,
+  ImportSelectedResponse,
+  SourcePreviewResponse,
+  WebsiteSourceListResponse,
+  WebsiteSourceRecord,
+} from './source-types';
 
-export interface WebsiteScanRecord {
-  id: string;
-  websiteSourceId: string;
-  status: 'IDLE' | 'SCANNING' | 'COMPLETED' | 'FAILED' | 'PARTIAL_FAILED';
-  startedAt: string | null;
-  finishedAt: string | null;
-  discoveredCount: number;
-  importedCount: number;
-  duplicateCount: number;
-  failureReason: string | null;
-  metadata: unknown;
-  createdAt: string;
-}
-
-export interface WebsiteSourceRecord {
-  id: string;
-  name: string;
-  baseUrl: string;
-  domain: string | null;
-  isActive: boolean;
-  scanConfig: unknown;
-  createdAt: string;
-  updatedAt: string;
-  scans: WebsiteScanRecord[];
-}
-
-export interface WebsiteSourceListResponse {
-  items: WebsiteSourceRecord[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
-export interface CreateWebsiteSourceRequest {
-  name: string;
-  baseUrl: string;
-  domain?: string;
-  maxPages?: number;
-  maxDocuments?: number;
-  isActive?: boolean;
-}
+export type {
+  CreateWebsiteSourceRequest,
+  CrawledPdfLink,
+  ImportSelectedRequest,
+  ImportSelectedResponse,
+  SourcePreviewResponse,
+  WebsiteScanRecord,
+  WebsiteSourceListResponse,
+  WebsiteSourceRecord,
+} from './source-types';
 
 export function listWebsiteSources(params: { limit?: number; offset?: number } = {}) {
   const limit = params.limit ?? 25;
@@ -54,4 +31,20 @@ export function createWebsiteSource(input: CreateWebsiteSourceRequest) {
 
 export function triggerWebsiteSourceScan(sourceId: string) {
   return apiPost<{ sourceId: string; status: 'TRIGGERED'; pid: number | null }>(`/sources/${sourceId}/scans`);
+}
+
+export function previewWebsiteSource(
+  sourceId: string,
+  params: { startPage?: number; endPage?: number; maxDocuments?: number } = {},
+) {
+  const qs = new URLSearchParams();
+  if (params.startPage) qs.set('startPage', String(params.startPage));
+  if (params.endPage) qs.set('endPage', String(params.endPage));
+  if (params.maxDocuments) qs.set('maxDocuments', String(params.maxDocuments));
+  const query = qs.toString();
+  return apiGet<SourcePreviewResponse>(`/sources/${sourceId}/preview${query ? `?${query}` : ''}`);
+}
+
+export function importSelectedLinks(sourceId: string, links: CrawledPdfLink[]) {
+  return apiPost<ImportSelectedResponse>(`/sources/${sourceId}/import-selected`, { links });
 }

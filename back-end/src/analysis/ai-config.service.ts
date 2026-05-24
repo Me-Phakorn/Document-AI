@@ -18,8 +18,17 @@ export interface ClaudeCodeConfig {
   requestTimeoutMs: number;
 }
 
+interface OpenRouterModelsResponse {
+  data?: Array<{
+    id?: unknown;
+  }>;
+}
+
 @Injectable()
 export class AiConfigService {
+  private modelCache?: { fetchedAt: number; models: string[] };
+  private readonly modelCacheTtlMs = 5 * 60 * 1000;
+
   constructor(@Inject(ConfigService) private readonly config: ConfigService) {}
 
   get provider() {
@@ -58,7 +67,7 @@ export class AiConfigService {
     };
   }
 
-  getPublicSummary(): AiProviderConfigDto {
+  async getPublicSummary(): Promise<AiProviderConfigDto> {
     const openRouter = this.getOpenRouterConfig();
     const claudeCode = this.getClaudeCodeConfig();
 
@@ -66,6 +75,7 @@ export class AiConfigService {
       provider: this.provider,
       fallbackProvider: this.fallbackProvider,
       model: openRouter.model,
+      modelOptions: await this.getOpenRouterModelOptions(),
       baseUrl: openRouter.baseUrl,
       apiKeyConfigured: Boolean(openRouter.apiKey),
       requestTimeoutMs: openRouter.requestTimeoutMs,
@@ -76,6 +86,39 @@ export class AiConfigService {
       claudeCodeModel: claudeCode.model,
       claudeCodeTimeoutMs: claudeCode.requestTimeoutMs,
     };
+  }
+
+  private async getOpenRouterModelOptions() {
+    const fallback = [this.model];
+    if (this.modelCache && Date.now() - this.modelCache.fetchedAt < this.modelCacheTtlMs) {
+      return this.modelCache.models;
+    }
+
+    const openRouter = this.getOpenRouterConfig();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), Math.min(openRouter.requestTimeoutMs, 10_000));
+
+    try {
+      const headers: Record<string, string> = { Accept: 'application/json' };
+      if (openRouter.apiKey) headers.Authorization = `Bearer ${openRouter.apiKey}`;
+      if (openRouter.httpReferer) headers['HTTP-Referer'] = openRouter.httpReferer;
+      if (openRouter.appTitle) headers['X-Title'] = openRouter.appTitle;
+
+      const response = await fetch(`${openRouter.baseUrl}/models`, { headers, signal: controller.signal });
+      if (!response.ok) return fallback;
+
+      const payload = (await response.json()) as OpenRouterModelsResponse;
+      const models = payload.data
+        ?.map((model) => (typeof model.id === 'string' ? model.id.trim() : ''))
+        .filter(Boolean) ?? [];
+      const modelOptions = Array.from(new Set([this.model, ...models]));
+      this.modelCache = { fetchedAt: Date.now(), models: modelOptions };
+      return modelOptions;
+    } catch {
+      return fallback;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   private readBoolean(key: string, fallback: boolean) {

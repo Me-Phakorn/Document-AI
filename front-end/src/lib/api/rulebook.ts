@@ -14,6 +14,13 @@ export interface RuleVersionRecord {
   createdAt: string;
 }
 
+export interface SourceDocumentInfo {
+  documentVersionId: string;
+  documentId: string;
+  documentVersionNumber: number;
+  title: string;
+}
+
 export interface MasterRulebookVersionRecord {
   id: string;
   masterRulebookId: string;
@@ -24,6 +31,7 @@ export interface MasterRulebookVersionRecord {
   createdAt: string;
   updatedAt: string;
   rules: RuleVersionRecord[];
+  sourceDocument: SourceDocumentInfo | null;
 }
 
 export interface MasterRulebookRecord {
@@ -36,10 +44,19 @@ export interface MasterRulebookRecord {
   versions: MasterRulebookVersionRecord[];
 }
 
+export interface MasterRulebookVersionWithRulebook extends Omit<MasterRulebookVersionRecord, 'sourceDocument'> {
+  sourceDocument: SourceDocumentInfo | null;
+  masterRulebook: Omit<MasterRulebookRecord, 'versions'>;
+}
+
 export function listRulebooks(params: { limit?: number; offset?: number } = {}) {
   const limit = params.limit ?? 25;
   const offset = params.offset ?? 0;
   return apiGet<{ items: MasterRulebookRecord[]; total: number; limit: number; offset: number }>(`/rulebooks?limit=${limit}&offset=${offset}`);
+}
+
+export function getRulebookVersion(rulebookVersionId: string) {
+  return apiGet<MasterRulebookVersionWithRulebook>(`/rulebooks/versions/${rulebookVersionId}`);
 }
 
 export function publishRulebookVersion(rulebookVersionId: string) {

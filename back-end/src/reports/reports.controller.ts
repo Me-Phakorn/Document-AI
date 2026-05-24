@@ -1,6 +1,7 @@
-import { Controller, Get, Headers, Inject, Param, Post, Query } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Post, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'node:crypto';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
 import { ReportsService } from './reports.service';
 
@@ -19,14 +20,14 @@ export class ReportsController {
   @Post('rulebook-versions/:rulebookVersionId/generate')
   @ApiOperation({ summary: 'Generate a rule extraction report and JSON export for a rulebook version' })
   @ApiOkResponse({ description: 'Generated report with completed JSON export.' })
-  generateRulebookReport(@Param('rulebookVersionId') rulebookVersionId: string, @Headers('x-actor-id') actorId: string | undefined, @Headers('x-correlation-id') correlationId: string | undefined) {
+  generateRulebookReport(@Param('rulebookVersionId') rulebookVersionId: string, @CurrentUser('id') actorId: string, @Query('correlationId') correlationId: string | undefined) {
     return this.reports.generateRulebookReport(rulebookVersionId, { actorId, correlationId: correlationId ?? randomUUID() });
   }
 
   @Post('compliance-checks/:complianceCheckId/generate')
   @ApiOperation({ summary: 'Generate a compliance usage report and JSON export for a compliance check' })
   @ApiOkResponse({ description: 'Generated compliance report with completed JSON export.' })
-  generateComplianceReport(@Param('complianceCheckId') complianceCheckId: string, @Headers('x-actor-id') actorId: string | undefined, @Headers('x-correlation-id') correlationId: string | undefined) {
+  generateComplianceReport(@Param('complianceCheckId') complianceCheckId: string, @CurrentUser('id') actorId: string, @Query('correlationId') correlationId: string | undefined) {
     return this.reports.generateComplianceReport(complianceCheckId, { actorId, correlationId: correlationId ?? randomUUID() });
   }
 

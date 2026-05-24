@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { AnalysisModule } from './analysis/analysis.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AuditModule } from './audit/audit.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { DocumentsModule } from './documents/documents.module';
@@ -22,6 +25,7 @@ import { UsersModule } from './users/users.module';
     }),
     PrismaModule,
     AuditModule,
+    AuthModule,
     StorageModule,
     AnalysisModule,
     DocumentsModule,
@@ -33,6 +37,9 @@ import { UsersModule } from './users/users.module';
     PromptsModule,
     UsersModule,
     HealthModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
 export class AppModule {}
