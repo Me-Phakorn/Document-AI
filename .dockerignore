@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+**/dist
+**/.next
+**/out
+
+# Development & local data
+.env
+.env.*
+data/
+*.log
+
+# Git
+.git
+.gitignore
+
+# Editors & OS
+.DS_Store
+.vscode
+*.swp
+
+# Test artifacts
+**/coverage
+**/.vitest-cache
+
+# Prisma migrations are needed — do NOT ignore prisma/

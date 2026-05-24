@@ -6,6 +6,9 @@ dist/
 coverage/
 *.tsbuildinfo
 
+# local runtime data — never commit binary store files
+data/
+
 .env
 .env.*
 !.env.example
