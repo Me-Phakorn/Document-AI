@@ -207,7 +207,12 @@ async function importPdfLink(
 
   const extracted = await extractPdfText(pdfBuffer);
   const normalizedText = normalizeText(extracted.text);
-  const contentSha256 = normalizedText ? sha256(normalizedText) : undefined;
+  // Only hash text that contains real Thai content. Image-based PDFs produce
+  // degenerate page-marker text ("-- 1 of 3 --") with no Thai characters, which
+  // is identical across many documents and causes false-positive deduplication.
+  const thaiCharCount = (normalizedText.match(/[ก-๙]/g) ?? []).length;
+  const hasUsableText = thaiCharCount >= 50;
+  const contentSha256 = hasUsableText ? sha256(normalizedText) : undefined;
   const existingByFile = await prisma.documentVersion.findFirst({ where: { fileSha256 } });
   const existingByContent = contentSha256 ? await prisma.documentVersion.findFirst({ where: { contentSha256 } }) : null;
 
@@ -224,8 +229,10 @@ async function importPdfLink(
   const textObjectKey = `ocr/${ocrArtifactId}/text/ocr.txt`;
   const textBuffer = Buffer.from(normalizedText || '', 'utf8');
   const pageCount = extracted.pageCount;
-  const ocrStatus = normalizedText ? OcrStatus.COMPLETED : OcrStatus.FAILED;
-  const documentStatus = normalizedText ? DocumentStatus.OCR_COMPLETED : DocumentStatus.OCR_FAILED;
+  // Use hasUsableText: image PDFs that yield only page-marker text are marked
+  // FAILED so the OCR pipeline can pick them up for real OCR later.
+  const ocrStatus = hasUsableText ? OcrStatus.COMPLETED : OcrStatus.FAILED;
+  const documentStatus = hasUsableText ? DocumentStatus.OCR_COMPLETED : DocumentStatus.OCR_FAILED;
 
   await minio.putObject(buckets.documents, originalObjectKey, pdfBuffer, pdfBuffer.byteLength, {
     'Content-Type': 'application/pdf',
