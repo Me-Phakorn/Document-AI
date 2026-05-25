@@ -21,7 +21,7 @@ export default async function DocumentsPage({
 
     const [summary, documents] = await Promise.all([
       getDocumentSummary(),
-      listDocuments({ limit: 500, offset: 0, search: search || undefined, status: status || undefined, ignore: ignore || undefined }),
+      listDocuments({ limit: 100, offset: 0, search: search || undefined, status: status || undefined, ignore: ignore || undefined }),
     ]);
 
     return (
