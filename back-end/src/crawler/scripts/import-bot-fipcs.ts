@@ -213,6 +213,10 @@ async function importPdfLink(
   const thaiCharCount = (normalizedText.match(/[ก-๙]/g) ?? []).length;
   const hasUsableText = thaiCharCount >= 50;
   const contentSha256 = hasUsableText ? sha256(normalizedText) : undefined;
+  // OCR is considered failed only when the extracted text is empty or consists
+  // solely of pdf-parse page-marker patterns like "-- 1 of 3 --". English-only
+  // PDFs (e.g. coupon rate announcements) have real content and must be COMPLETED.
+  const isDegenerateText = !normalizedText || /^(--\s*\d+\s*of\s*\d+\s*--\s*)*$/.test(normalizedText.trim());
   const existingByFile = await prisma.documentVersion.findFirst({ where: { fileSha256 } });
   const existingByContent = contentSha256 ? await prisma.documentVersion.findFirst({ where: { contentSha256 } }) : null;
 
@@ -229,10 +233,10 @@ async function importPdfLink(
   const textObjectKey = `ocr/${ocrArtifactId}/text/ocr.txt`;
   const textBuffer = Buffer.from(normalizedText || '', 'utf8');
   const pageCount = extracted.pageCount;
-  // Use hasUsableText: image PDFs that yield only page-marker text are marked
-  // FAILED so the OCR pipeline can pick them up for real OCR later.
-  const ocrStatus = hasUsableText ? OcrStatus.COMPLETED : OcrStatus.FAILED;
-  const documentStatus = hasUsableText ? DocumentStatus.OCR_COMPLETED : DocumentStatus.OCR_FAILED;
+  // Image PDFs produce only degenerate page-marker text; mark them FAILED so the
+  // OCR pipeline can re-process them with real OCR (Tesseract/PaddleOCR) later.
+  const ocrStatus = isDegenerateText ? OcrStatus.FAILED : OcrStatus.COMPLETED;
+  const documentStatus = isDegenerateText ? DocumentStatus.OCR_FAILED : DocumentStatus.OCR_COMPLETED;
 
   await minio.putObject(buckets.documents, originalObjectKey, pdfBuffer, pdfBuffer.byteLength, {
     'Content-Type': 'application/pdf',
