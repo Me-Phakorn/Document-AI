@@ -70,7 +70,7 @@ export function AppShell({ children, currentUser }: { children: React.ReactNode;
           })}
         </div>
         <div className="ml-auto flex min-w-0 items-center gap-3">
-          <Link href="/logout" className="rounded-md border border-border bg-raised px-3 py-1.5 text-sm text-t2 transition hover:bg-white hover:text-t1">
+          <Link href="/logout" prefetch={false} className="rounded-md border border-border bg-raised px-3 py-1.5 text-sm text-t2 transition hover:bg-white hover:text-t1">
             Log out
           </Link>
           <div
