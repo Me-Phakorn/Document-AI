@@ -21,7 +21,7 @@ COPY back-end/package.json  ./back-end/
 COPY front-end/package.json ./front-end/
 
 # Install only back-end workspace dependencies
-RUN pnpm install --filter @docai/back-end --frozen-lockfile
+RUN pnpm install --filter @docai/back-end --no-frozen-lockfile
 
 # ── Application source ───────────────────────────────────────────────────────
 COPY back-end/ ./back-end/
