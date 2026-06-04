@@ -52,7 +52,7 @@ export class DocumentsService {
     private readonly config: ConfigService,
   ) {}
 
-  async list(query: PaginationQueryDto & { status?: DocumentStatus; search?: string; ignore?: string }) {
+  async list(query: PaginationQueryDto & { status?: DocumentStatus; search?: string; ignore?: string; sourceType?: SourceType }) {
     const limit = Math.min(Math.max(Number(query.limit) || 25, 1), 100);
     const offset = Math.max(Number(query.offset) || 0, 0);
 
@@ -72,6 +72,9 @@ export class DocumentsService {
     if (query.search?.trim()) {
       where.title = { contains: query.search.trim(), mode: 'insensitive' };
     }
+    if (query.sourceType) {
+      where.document = { sourceType: query.sourceType };
+    }
 
     const [items, total] = await this.prisma.$transaction([
       this.prisma.documentVersion.findMany({
@@ -88,7 +91,7 @@ export class DocumentsService {
   }
 
   async getSummary() {
-    const [totalDocuments, totalVersions, latestVersions, versionsByStatus, versionsByOcrStatus, aiResultsByStatus, latestScan] =
+    const [totalDocuments, totalVersions, latestVersions, versionsByStatus, versionsByOcrStatus, aiResultsByStatus, latestScan, documentsBySource] =
       await this.prisma.$transaction([
         this.prisma.document.count(),
         this.prisma.documentVersion.count(),
@@ -97,11 +100,13 @@ export class DocumentsService {
         this.prisma.documentVersion.groupBy({ by: ['ocrStatus'], orderBy: { ocrStatus: 'asc' }, _count: true }),
         this.prisma.aiAnalysisResult.groupBy({ by: ['status'], orderBy: { status: 'asc' }, _count: true }),
         this.prisma.websiteScan.findFirst({ orderBy: { createdAt: 'desc' } }),
+        this.prisma.document.groupBy({ by: ['sourceType'], orderBy: { sourceType: 'asc' }, _count: true }),
       ]);
 
     const statusCounts = Object.fromEntries(versionsByStatus.map((item) => [item.status, item._count]));
     const ocrCounts = Object.fromEntries(versionsByOcrStatus.map((item) => [item.ocrStatus, item._count]));
     const aiCounts = Object.fromEntries(aiResultsByStatus.map((item) => [item.status, item._count]));
+    const sourceCounts = Object.fromEntries(documentsBySource.map((item) => [item.sourceType, item._count]));
 
     return {
       documents: {
@@ -114,6 +119,11 @@ export class DocumentsService {
         pendingReview: statusCounts[DocumentStatus.PENDING_REVIEW] ?? 0,
         approved: statusCounts[DocumentStatus.APPROVED] ?? 0,
         notRelevant: statusCounts[DocumentStatus.NOT_RELEVANT] ?? 0,
+        bySource: {
+          upload: sourceCounts[SourceType.UPLOAD] ?? 0,
+          website: sourceCounts[SourceType.WEBSITE_SCAN] ?? 0,
+          api: sourceCounts[SourceType.API] ?? 0,
+        },
       },
       ocr: {
         completed: ocrCounts[OcrStatus.COMPLETED] ?? 0,

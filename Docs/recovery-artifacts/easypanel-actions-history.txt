@@ -1,0 +1,1422 @@
+SQLite format 3
+Stableactionsactions
+CREATE TABLE `actions` (
+	`id` text NOT NULL,
+	`projectName` text,
+	`serviceName` text,
+	`type` text NOT NULL,
+	`status` text DEFAULT 'pending' NOT NULL,
+	`description` text NOT NULL,
+	`noKill` integer,
+	`noLogs` integer,
+	`createdAt` text NOT NULL,
+	`updatedAt` text NOT NULL
+, `userId` text, `isApiAction` integer, `isSystemAction` integer, `meta` text)H
+gindexidx_typeactions
+CREATE INDEX `idx_type` ON `actions` (`type`)t
+'indexidx_project_serviceactions
+CREATE INDEX `idx_project_service` ON `actions` (`projectName`,`serviceName`)
+9tableactionsactions
+CREATE TABLE `actions` (
+	`id` text NOT NULL,
+	`projectName` text,
+	`serviceName` text,
+	`type` text NOT NULL,
+	`status` text DEFAULT 'pending' NOT NULL,
+	`description` text NOT NULL,
+	`noKill` integer,
+	`noLogs` integer,
+	`createdAt` text NOT NULL,
+	`updatedAt` text NOT NULL
+cm92ltimr000r07mvayf86578noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:50:322025-04-04 09:50:32cm925owcd000007mvhzxb6khn
+cm92lshl5000q07mvchlpcgutnoiamgayipetto-servicedeploymenterrorDeploy service: update docker file2025-04-04 09:49:442025-04-04 09:49:48cm925owcd000007mvhzxb6khn
+cm92lsabw000p07mvdnc0gpdwnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:49:352025-04-04 09:49:35cm925owcd000007mvhzxb6khn
+cm92lrg84000o07mva03tekw1noiamgayipetto-servicedeploymenterrorDeploy service: update docker file2025-04-04 09:48:562025-04-04 09:48:59cm925owcd000007mvhzxb6khn
+cm92lrccx000n07mvg9dthx3enoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:48:512025-04-04 09:48:51cm925owcd000007mvhzxb6khn
+cm92lr2e3000m07mvfpma5a35noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:48:382025-04-04 09:48:38cm925owcd000007mvhzxb6khn
+cm92lqact000l07mv6t4idcahnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:48:012025-04-04 09:48:01cm925owcd000007mvhzxb6khn
+cm92lpxsg000k07mv0kh1axvnnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:47:452025-04-04 09:47:45cm925owcd000007mvhzxb6khn
+cm92kjn2c000j07mv376a77q9noiamgayapp-gay-servicedestroydoneDestroy service2025-04-04 09:14:522025-04-04 09:14:52cm925owcd000007mvhzxb6khn
+cm92efaeo000i07mv1z5dea7znoiamgaypgadmin-web-servicedeploymentdoneDeploy service2025-04-04 06:23:312025-04-04 06:23:31cm925owcd000007mvhzxb6khn
+1		33?
+cm92e5s24000h07mv36pcc420authdoneUser phakorn.sila@gmail.com logged in from 2405:9800:bc90:890f:387d:81c0:7d85:b0ee2025-04-04 06:16:072025-04-04 06:16:07cm925owcd000007mvhzxb6khn
+1		33?
+cm92dzhyf000f07mv6t2mae9tauthdoneUser phakorn.sila@gmail.com logged in from 2405:9800:bc90:890f:387d:81c0:7d85:b0ee2025-04-04 06:11:142025-04-04 06:11:14cm925owcd000007mvhzxb6khn
+cm92d4f2a000d07mv0vo98d7inoiamgaypgadmin-web-servicedeploymentdoneDeploy service2025-04-04 05:47:042025-04-04 05:47:04cm925owcd000007mvhzxb6khn
+	33?
+cm92d3ypr000c07mv58gxhckhnoiamgaymongo-servicestopdoneStop service2025-04-04 05:46:432025-04-04 05:46:43cm925owcd000007mvhzxb6khn
+cm92cvmwf000b07mvgrov676jnoiamgaypgadmin-web-servicedeploymentdoneDeploy service2025-04-04 05:40:142025-04-04 05:40:14cm925owcd000007mvhzxb6khn
+cm92cuh3m000a07mv391we84xnoiamgaypgadmin-web-servicedeploymentdoneDeploy service2025-04-04 05:39:202025-04-04 05:39:20cm925owcd000007mvhzxb6khn
+cm92cpie6000907mvc04i7nd3noiamgaypgadmin-web-servicedeploymentdoneDeploy service2025-04-04 05:35:292025-04-04 05:35:40cm925owcd000007mvhzxb6khn
+cm92clsn6000807mv7ga9b8kznoiamgaygay-composedestroydoneDestroy service2025-04-04 05:32:352025-04-04 05:32:36cm925owcd000007mvhzxb6khn
+cm92chzqy000707mv6xgv6ga0noiamgaysuper-redis-gay-use-servicedestroydoneDestroy service2025-04-04 05:29:382025-04-04 05:29:38cm925owcd000007mvhzxb6khn
+cm92chs35000607mv391s7fdhnoiamgaygay-postgres-servicedestroydoneDestroy service2025-04-04 05:29:282025-04-04 05:29:28cm925owcd000007mvhzxb6khn
+	33?
+cm92chpfn000507mv9ftzhp8knoiamgaygay-postgres-servicestopdoneStop service2025-04-04 05:29:242025-04-04 05:29:25cm925owcd000007mvhzxb6khn
+cm92b5stl000407mve96shm8mtest_easypaneltest_servicedestroydoneDestroy service2025-04-04 04:52:092025-04-04 04:52:09cm925owcd000007mvhzxb6khn
+cm92b5ku3000307mvhgef5l1etest_easypaneltest_servicedestroydoneDestroy service2025-04-04 04:51:592025-04-04 04:51:59cm925owcd000007mvhzxb6khn
+		33?
+cm925ox1g000207mv1xrugr37authdoneUser phakorn.sila@gmail.com logged in from 184.22.146.2232025-04
+i	m	O	4
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8ngotenberg
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8npgadmin
+n8nn8n_service
+n8npgadmin
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service~
+n8nn8n_service}
+n8nbrowserless|
+n8nn8n_servicez
+n8nn8n_servicey
+n8nn8n_servicex
+n8nn8n_servicew
+n8nn8n_servicev)
+lusiaa-servicelusiaa-backend-composed
+n8nn8n_servicei
+n8nn8n_serviceh
+n8nn8n_servicef
+n8nn8n_servicee
+n8nn8n_serviceu
+n8nn8n_servicet
+n8nn8n_services
+n8nn8n_serviceq
+n8nn8n_servicep
+n8nn8n_serviceo
+n8nn8n_servicen
+n8nn8n_servicem
+n8nn8n_servicel
+n8nn8n_servicek
+n8nn8n_servicej
+n8nn8nR
+n8nn8nQ!
+reverse_proxyreverse_serviceP
+reverse_proxyreverse_serviceN!
+reverse_proxyreverse_serviceM!
+reverse_proxyreverse_serviceL!
+reverse_proxyreverse_serviceK!
+reverse_proxyreverse_serviceJ
+reverse_proxyapp_serviceI
+reverse_proxyapp_serviceH
+reverse_proxyapp_serviceG
+reverse_proxym-serviceF
+reverse_proxym-serviceE
+lusiaa-servicelusiaa-backend-composeC)
+lusiaa-servicelusiaa-backend-composeB)
+lusiaa-servicelusiaa-backend-composeA
+noiamgayredis-service@
+noiamgaypostgres-service? 
+noiamgaypgadmin-web-service>
+noiamgaymongo-service=
+noiamgayipetto-service<
+noiamgaymongo-service:
+noiamgayipetto-service8
+noiamgayipetto-service7
+noiamgayipetto-service6
+noiamgayipetto-service5
+noiamgayipetto-service4
+noiamgayipetto-service3
+noiamgayipetto-service2
+noiamgayipetto-service1
+noiamgayipetto-service0
+noiamgayipetto-service/
+noiamgayipetto-service.
+noiamgayipetto-service-
+noiamgayipetto-service,
+noiamgayipetto-service+
+noiamgayipetto-service*
+noiamgayipetto-service)
+noiamgayipetto-service(
+noiamgayipetto-service'
+noiamgayipetto-service&
+noiamgayipetto-service%
+noiamgayipetto-service$
+noiamgayipetto-service#
+noiamgayipetto-service"
+noiamgayipetto-service!
+noiamgayipetto-service 
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayapp-gay-service
+noiamgaypgadmin-web-service
+noiamgaypgadmin-web-service
+noiamgaymongo-service
+noiamgaypgadmin-web-service
+noiamgaypgadmin-web-service	 
+noiamgaypgadmin-web-service
+noiamgaygay-compose
+noiamgaysuper-redis-gay-use-service
+noiamgaygay-postgres-service
+noiamgaygay-postgres-service
+test_easypaneltest_service
+n8nn8n_service
+	y	i	Y	7
+T	G	
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+auth
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+deployment
+deployment
+deployment
+deployment
+auth
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+deployment
+auth
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+deployment
+auth
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+deployment
+volumeBackup
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment~
+env}
+deployment|
+auth{
+volumeBackupz
+deploymenty
+deploymentx
+deploymentw
+deploymentv
+destroyd
+deploymentj
+envi
+volumeBackuph
+backupg
+envf
+deploymente
+backup^
+volumeBackupu
+deploymentt
+envs
+authr
+volumeBackupq
+volumeBackupp
+volumeBackupo
+deploymentn
+deploymentm
+deploymentl
+envk
+destroyR
+deploymentQ
+destroyP
+authO
+deploymentN
+deploymentM
+deploymentL
+deploymentK
+deploymentJ
+destroyI
+deploymentH
+deploymentG
+destroyF
+deploymentE
+authD
+deploymentC
+deploymentB
+deploymentA
+destroy@
+destroy?
+destroy>
+destroy=
+destroy<
+auth;	
+start:
+auth9
+deployment8
+deployment7
+deployment6
+deployment5
+deployment4
+deployment3
+deployment2
+deployment1
+deployment0
+deployment/
+deployment.
+deployment-
+deployment,
+deployment+
+deployment*
+deployment)
+deployment(
+deployment'
+deployment&
+deployment%
+deployment$
+deployment#
+deployment"
+deployment!
+deployment 
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+destroy
+deployment
+auth
+auth
+deployment
+stop
+deployment
+deployment	
+deployment
+destroy
+destroy
+destroy
+stop
+destroy
+deployment
+cm92ltimr000r07mvayf86578noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:50:322025-04-04 09:50:32cm925owcd000007mvhzxb6khn
+cm92lshl5000q07mvchlpcgutnoiamgayipetto-servicedeploymenterrorDeploy service: update docker file2025-04-04 09:49:442025-04-04 09:49:48cm925owcd000007mvhzxb6khn
+cm92lsabw000p07mvdnc0gpdwnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:49:352025-04-04 09:49:35cm925owcd000007mvhzxb6khn
+cm92lrg84000o07mva03tekw1noiamgayipetto-servicedeploymenterrorDeploy service: update docker file2025-04-04 09:48:562025-04-04 09:48:59cm925owcd000007mvhzxb6khn
+cm92lrccx000n07mvg9dthx3enoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:48:512025-04-04 09:48:51cm925owcd000007mvhzxb6khn
+cm92lr2e3000m07mvfpma5a35noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:48:382025-04-04 09:48:38cm925owcd000007mvhzxb6khn
+cm92lqact000l07mv6t4idcahnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:48:012025-04-04 09:48:01cm925owcd000007mvhzxb6khn
+cm92lpxsg000k07mv0kh1axvnnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:47:452025-04-04 09:47:45cm925owcd000007mvhzxb6khn
+cm92kjn2c000j07mv376a77q9noiamgayapp-gay-servicedestroydoneDestroy service2025-04-04 09:14:522025-04-04 09:14:52cm925owcd000007mvhzxb6khn
+cm92efaeo000i07mv1z5dea7znoiamgaypgadmin-web-servicedeploymentdoneDeploy service2025-04-04 06:23:312025-04-04 06:23:31cm925owcd000007mvhzxb6khn
+1		33?
+cm92e5s24000h07mv36pcc420authdoneUser phakorn.sila@gmail.com logged in from 2405:9800:bc90:890f:387d:81c0:7d85:b0ee2025-04-04 06:16:072025-04-04 06:16:07cm925owcd000007mvhzxb6khn
+1		33?
+cm92dzhyf000f07mv6t2mae9tauthdoneUser phakorn.sila@gmail.com logged in from 2405:9800:bc90:890f:387d:81c0:7d85:b0ee2025-04-04 06:11:142025-04-04 06:11:14cm925owcd000007mvhzxb6khn
+cm92d4f2a000d07mv0vo98d7inoiamgaypgadmin-web-servicedeploymentdoneDeploy service2025-04-04 05:47:042025-04-04 05:47:04cm925owcd000007mvhzxb6khn
+	33?
+cm92d3ypr000c07mv58gxhckhnoiamgaymongo-servicestopdoneStop service2025-04-04 05:46:432025-04-04 05:46:43cm925owcd000007mvhzxb6khn
+cm92cvmwf000b07mvgrov676jnoiamgaypgadmin-web-servicedeploymentdoneDeploy service2025-04-04 05:40:142025-04-04 05:40:14cm925owcd000007mvhzxb6khn
+cm92cuh3m000a07mv391we84xnoiamgaypgadmin-web-servicedeploymentdoneDeploy service2025-04-04 05:39:202025-04-04 05:39:20cm925owcd000007mvhzxb6khn
+cm92cpie6000907mvc04i7nd3noiamgaypgadmin-web-servicedeploymentdoneDeploy service2025-04-04 05:35:292025-04-04 05:35:40cm925owcd000007mvhzxb6khn
+cm92clsn6000807mv7ga9b8kznoiamgaygay-composedestroydoneDestroy service2025-04-04 05:32:352025-04-04 05:32:36cm925owcd000007mvhzxb6khn
+cm92chzqy000707mv6xgv6ga0noiamgaysuper-redis-gay-use-servicedestroydoneDestroy service2025-04-04 05:29:382025-04-04 05:29:38cm925owcd000007mvhzxb6khn
+cm92chs35000607mv391s7fdhnoiamgaygay-postgres-servicedestroydoneDestroy service2025-04-04 05:29:282025-04-04 05:29:28cm925owcd000007mvhzxb6khn
+	33?
+cm92chpfn000507mv9ftzhp8knoiamgaygay-postgres-servicestopdoneStop service2025-04-04 05:29:242025-04-04 05:29:25cm925owcd000007mvhzxb6khn
+cm92b5stl000407mve96shm8mtest_easypaneltest_servicedestroydoneDestroy service2025-04-04 04:52:092025-04-04 04:52:09cm925owcd000007mvhzxb6khn
+cm92b5ku3000307mvhgef5l1etest_easypaneltest_servicedestroydoneDestroy service2025-04-04 04:51:592025-04-04 04:51:59cm925owcd000007mvhzxb6khn
+		33?
+cm925ox1g000207mv1xrugr37authdoneUser phakorn.sila@gmail.com logged in from 184.22.146.2232025-04-04 02:19:042025-04-04 02:19:04cm925owcd000007mvhzxb6khn
+cm92ne9lz000m07qofb9p79r1noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:34:402025-04-04 10:34:40cm925owcd000007mvhzxb6khn
+cm92ndktu000l07qo3hcu62lunoiamgayipetto-servicedeploymentdoneDeploy service: add hostname2025-04-04 10:34:082025-04-04 10:34:36cm925owcd000007mvhzxb6khn
+cm92ndi5i000k07qo2ruabjn8noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:34:042025-04-04 10:34:04cm925owcd000007mvhzxb6khn
+cm92ndhib000j07qo9by59qmenoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:34:032025-04-04 10:34:03cm925owcd000007mvhzxb6khn
+cm92n7z6c000i07qoa72kdmzjnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:29:462025-04-04 10:29:46cm925owcd000007mvhzxb6khn
+cm92n7y4c000h07qo2a933eibnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:29:452025-04-04 10:29:45cm925owcd000007mvhzxb6khn
+cm92n7myc000g07qo0sl6gxronoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:29:302025-04-04 10:29:31cm925owcd000007mvhzxb6khn
+cm92n723b000f07qo80hj8zvpnoiamgayipetto-servicedeploymentdoneDeploy service: add hostname2025-04-04 10:29:032025-04-04 10:29:19
+cm92n1mil000e07qo7b6rcy7lnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:24:502025-04-04 10:24:50cm925owcd000007mvhzxb6khn
+cm92n1lwc000d07qo2nn06wmnnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:24:492025-04-04 10:24:49cm925owcd000007mvhzxb6khn
+cm92n0vkr000c07qoar8hdumwnoiamgayipetto-servicedeploymentdoneDeploy service: debug2025-04-04 10:24:152025-04-04 10:24:31
+cm92mx4c6000b07qocus449zhnoiamgayipetto-servicedeploymentdoneDeploy service: update port 30012025-04-04 10:21:202025-04-04 10:21:21cm925owcd000007mvhzxb6khn
+cm92mvvze000a07qod5yo51t4noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:20:222025-04-04 10:20:22cm925owcd000007mvhzxb6khn
+cm92mvvbz000907qo40lwf65onoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:20:212025-04-04 10:20:22cm925owcd000007mvhzxb6khn
+cm92muv9l000807qoalmeh3pcnoiamgayipetto-servicedeploymentdoneDeploy service: update port 30012025-04-04 10:19:352025-04-04 10:19:51
+cm92mif3l000707qofaokahhmnoiamgayipetto-servicedeploymentdoneDeploy service: fix dockerfile2025-04-04 10:09:542025-04-04 10:10:10
+cm92mfl8d000607qo0txq08d7noiamgayipetto-servicedeploymentdoneDeploy service: update docker file2025-04-04 10:07:422025-04-04 10:08:10cm925owcd000007mvhzxb6khn
+cm92md9l3000507qobqq0c1ptnoiamgayipetto-servicedeploymentdoneDeploy service: update docker file2025-04-04 10:05:532025-04-04 10:06:26cm925owcd000007mvhzxb6khn
+cm92md8o2000407qof99h1pw4noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:05:522025-04-04 10:05:52cm925owcd000007mvhzxb6khn
+cm92m536n000307qobxvs6bvmnoiamgayipetto-servicedeploymenterrorDeploy service: update docker file2025-04-04 09:59:322025-04-04 09:59:35cm925owcd000007mvhzxb6khn
+cm92m4yab000207qo61fi44nlnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:59:262025-04-04 09:59:26cm925owcd000007mvhzxb6khn
+cm92m4q6o000107qo1h5kciabnoiamgayipetto-servicedeploymenterrorDeploy service: update docker file2025-04-04 09:59:152025-04-04 09:59:19cm925owcd000007mvhzxb6khn
+cm92m4pgo000007qo2vfbhhlfnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 09:59:142025-04-04 09:59:14cm925owcd000007mvhzxb6khn
+cm92m3kao000007p8avph0k70noiamgayipetto-servicedeploymenterrorDeploy service: update docker file2025-04-04 09:58:212025-04-04 09:58:24
+cm92m2v1c000s07mv4vjm0kqenoiamgayipetto-servicedeploymenterrorDeploy service: update docker file2025-04-04 09:57:482025-04-04 09:57:51
+?'+!
+cmcro2i8y001e07qodcabgsfareverse_proxyreverse_servicedeploymentdoneDeploy service: init project2025-07-06 12:46:522025-07-06 12:47:10cm925owcd000007mvhzxb6khn
+cmcrns5v3001d07qo69bb5le5reverse_proxyapp_servicedestroydoneDestroy service2025-07-06 12:38:502025-07-
+cmcrnj7ba001907qogkdeclnnreverse_proxym-servicedeploymenterrorDeploy service2025-07-06 12:31:522025-07-06 12:31:56
+}		33?
+cmcrn9o0q001807qo7j0o3n93authdoneUser phakorn.sila@gmail.com logged in from 49.228.70.2232025-07-06 12:24:272025-07-06 12:24:27cm925owcd000007mvhzxb6khn
+?)9!
+cmbtlzm9p001607qofazdfsy0lusiaa-servicelusiaa-backend-composedeploymentdoneDeploy service2025-06-12 16:44:282025-06-12 16:44:28cm925owcd000007mvhzxb6khn
+cm92ne9lz000m07qofb9p79r1noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:34:402025-04-04 10:34:40cm925owcd000007mvhzxb6khn
+cm92ndktu000l07qo3hcu62lunoiamgayipetto-servicedeploymentdoneDeploy service: add hostname2025-04-04 10:34:082025-04-04 10:34:36cm925owcd000007mvhzxb6khn
+cm92ndi5i000k07qo2ruabjn8noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:34:042025-04-04 10:34:04cm925owcd000007mvhzxb6khn
+?)9!
+cmbtlwfbj001507qoeaox98nglusiaa-servicelusiaa-backend-composedeploymentdoneDeploy service2025-06-12 16:41:592025-06-12 16:42:00cm925owcd000007mvhzxb6khn
+?)9!
+cmbtltjo7001407qo7m61fut7lusiaa-servicelusiaa-backend-composedeploymentdoneDeploy service2025-06-12 16:39:452025-06-12 16:40:35cm925owcd000007mvhzxb6khn
+cmbtlmkk5001307qo3wwc0b1fnoiamgayredis-servicedestroydoneDestroy service2025-06-12 16:34:192025-06-12 16:34:19cm925owcd000007mvhzxb6khn
+cmbtlmkha001207qo8nwf5xivnoiamgaypostgres-servicedestroydoneDestroy service2025-06-12 16:34:192025-06-12 16:34:19cm925owcd000007mvhzxb6khn
+cmbtlmkfz001107qo5z1ga20rnoiamgaypgadmin-web-servicedestroydoneDestroy service2025-06-12 16:34:192025-06-12 16:34:19cm925owcd000007mvhzxb6khn
+cmbtlmkfa001007qo6tscddqinoiamgaymongo-servicedestroydoneDestroy service2025-06-12 16:34:192025-06-12 16:34:19cm925owcd000007mvhzxb6khn
+cmbtlmkef000z07qo9b3reftynoiamgayipetto-servicedestroydoneDestroy service2025-06-12 16:34:192025-06-12 16:34:19cm925owcd000007mvhzxb6khn
+}		33?
+cmbtllpmy000y07qoayyn4c7rauthdoneUser phakorn.sila@gmail.com logged in from 49.228.67.1002025-06-12 16:33:392025-06-12 16:33:39cm925owcd000007mvhzxb6khn
+	33?
+cmbtljla5000w07qog7uih0aonoiamgaymongo-servicestartdoneStart service2025-06-12 16:32:002025-06-12 16:32:00cm925owcd000007mvhzxb6khn
+}		33?
+cmbtlj2wy000v07qocblr1kaaauthdoneUser phakorn.sila@gmail.com logged in from 49.228.67.1002025-06-12 16:31:372025-06-12 16:31:37cm925owcd000007mvhzxb6khn
+cm92o5f4a000t07qo5aeg874bnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:55:472025-04-04 10:55:47cm925owcd000007mvhzxb6khn
+cm92o1ah0000s07qo4lqy2y7anoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:52:342025-04-04 10:52:34cm925owcd000007mvhzxb6khn
+cm92nx1ki000r07qo3rdkc4h1noiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:49:162025-04-04 10:49:16cm925owcd000007mvhzxb6khn
+cm92nv1tv000q07qo6iadfbkanoiamgayipetto-servicedeploymentdoneDeploy service: fix dockerfile2025-04-04 10:47:432025-04-04 10:48:10cm925owcd000007mvhzxb6khn
+cm92nuufe000p07qo4bui3abrnoiamgayipetto-servicedeploymentdoneDeploy service2025-04-04 10:47:332025-04-04 10:47:33cm925owcd000007mvhzxb6khn
+cm92nur0b000o07qo97n7c2gtnoiamgayipetto-servicedeploymentkilledDeploy service: fix dockerfile2025-04-04 10:47:292025-04-04 10:47:33cm925owcd000007mvhzxb6khn
+cm92nijrm000n07qo4x38eezlnoiamgayipetto-servicedeploymentdoneDeploy service: fix dockerfile2025-04-04 10:38:002025-04-04 10:38:15
+cmmmsqq0c002f07qr0owscnozn8nn8n_servicevolumeBackupdoneBackup volume2026-03-12 01:35:532026-03-12 01:35:53cm925owcd000007mvhzxb6khn
+cmmmsod76002e07qrb2hu3m41n8nn8n_servicedeploymentdoneDeploy service2026-03-12 01:34:032026-03-12 01:34:03cm925owcd000007mvhzxb6khn
+cmmmsoal9002d07qre7mk6shrn8nn8n_servicedeploymentdoneDeploy service2026-03-12 01:34:002026-03-12 01:34:01cm925owcd000007mvhzxb6khn
+cmmmso9jj002c07qra8c763c1n8nn8n_servicedeploymentdoneDeploy service2026-03-12 01:33:582026-03-12 01:33:58cm925owcd000007mvhzxb6khn
+1		33?
+cmmmso8cp002b07qre3x59342n8nn8n_serviceenvdoneUpdate environment2026-03-12 01:33:572026-03-12 01:33:57cm925owcd000007mvhzxb6khn
+cmmmslyck002a07qrdnf9g1z7n8nn8n_servicedeploymentdoneDeploy service2026-03-12 01:32:102026-03-12 01:32:12cm925owcd000007mvhzxb6khn
+1		33?
+cmmmslwso002907qrgyrb20kpn8nn8n_serviceenvdoneUpdate environment2026-03-12 01:32:082026-03-12 01:32:08cm925owcd000007mvhzxb6khn
+cmmmsl6ix002807qrcmf5dil4n8nn8n_servicevolumeBackupdoneBackup volume2026-03-12 01:31:342026-03-12 01:31:34cm925owcd000007mvhzxb6khn
+i		33
+cmmmsl2wh002707qr82ncc32ibackupdoneVolume Backup created for n8n/n8n_service/data2026-03-12 01:31:302026-03-12 01:31:30
+1		33?
+cmmmsjkfd002507qrcfidbvc3n8nn8n_serviceenvdoneUpdate environment2026-03-12 01:30:192026-03-12 01:30:19cm925owcd000007mvhzxb6khn
+cmmmri8ji001507qrc3f0adlpn8nn8ndestroydoneDestroy service2026-03-12 01:01:172026-03-12 01:01:18cm925owcd000007mvhzxb6khn
+cmmmrepyf001407qrdok44i3sn8nn8ndeploymentdoneDeploy service2026-03-12 00:58:332026-03-12 00:58:44cm925owcd000007mvhzxb6khn
+cmcrns5v3001d07qo69bb5le5reverse_proxyapp_servicedestroydoneDestroy service2025-07-06 12:38:502025-07-06 12:38:50cm925owcd000007mvhzxb6khn
+?'#!
+cmcrnm0n1001c07qogskng7n1reverse_proxyapp_servicedeploymentdoneDeploy service2025-07-06 12:34:032025-07-06 12:34:03cm925owcd000007mvhzxb6khn
+?'#!
+cmcrnkxbg001b07qoh2294cmqreverse_proxyapp_servicedeploymenterrorDeploy service2025-07-06 12:33:122025-07-06 12:33:12
+cmcrnk46f001a07qo8jwhhnmireverse_proxym-servicedestroydoneDestroy service2025-07-06 12:32:342025-07-06 12:32:34cm925owcd000007mvhzxb6khn
+cmmmsj16g002407qr7w6yeadyn8nn8n_servicedeploymentdoneDeploy service2026-03-12 01:29:542026-03-12 01:29:56cm925owcd000007mvhzxb6khn
+cmmms8u0f001p07qr4zouadiqlusiaa-servicelusiaa-backend-composedestroydoneDestroy service2026-03-12 01:21:582026-03-12 01:21:59cm925owcd000007mvhzxb6khn
+i		33
+cmmmrslmc001j07qr6v5afhdabackupdoneVolume Backup created for n8n/n8n_service/data2026-03-12 01:09:212026-03-12 01:09:21
+?'+!
+cmcro2i8y001e07qodcabgsfareverse_proxyreverse_servicedeploymentdoneDeploy service: init project2025-07-06 12:46:522025-07-06 12:47:10cm925owcd000007mvhzxb6khn
+cmmmpqzz1001l07qo13l7ccncreverse_proxyreverse_servicedestroydoneDestroy service2026-03-12 00:12:072026-03-12 00:12:18cm925owcd000007mvhzxb6khn
+{		33?
+cmmmpp8g8001k07qodv1ja40iauthdoneUser phakorn.sila@gmail.com logged in from 49.228.35.922026-03-12 00:10:452026-03-12 00:10:45cm925owcd000007mvhzxb6khn
+?'+!
+cmcrq4qn8001i07qof0zq9160reverse_proxyreverse_servicedeploymentdoneDeploy service: fix port2025-07-06 13:44:362025-07-06 13:44:55cm925owcd000007mvhzxb6khn
+?'+!
+cmcrpeygb001h07qof0qe37egreverse_proxyreverse_servicedeploymentdoneDeploy service: add CORS2025-07-06 13:24:332025-07-06 13:24:48cm925owcd000007mvhzxb6khn
+?'+!
+cmcrospm2001g07qo7k5dhegbreverse_proxyreverse_servicedeploymentdoneDeploy service: fix compose2025-07-06 13:07:152025-07-06 13:07:30cm925owcd000007mvhzxb6khn
+?'+!
+cmcrohh9c001f07qobtlz5997reverse_proxyreverse_servicedeploymentdoneDeploy service: init project2025-07-06 12:58:312025-07-06 12:58:39cm925owcd000007mvhzxb6khn
+cmmqiaw19000907o59zcb716ln8nn8n_servicedeploymentdoneDeploy service2026-03-14 15:54:432026-03-14 15:54:45cm925owcd000007mvhzxb6khn
+1		33?
+cmmqiaumc000807o5heglheean8nn8n_serviceenvdoneUpdate environment2026-03-14 15:54:412026-03-14 15:54:41cm925owcd000007mvhzxb6khn
+1		33?
+cmmqiaoyi000707o5f2hcfti7n8nn8n_serviceenvdoneUpdate environment2026-03-14 15:54:342026-03-14 15:54:34cm925owcd000007mvhzxb6khn
+cmmqhyhvz000607o5gkvk0x8in8nn8n_servicedeploymentdoneDeploy service2026-03-14 15:45:052026-03-14 15:45:05cm925owcd000007mvhzxb6khn
+cmmqhygk2000507o59i3r24qxn8nn8n_servicedeploymentdoneDeploy service2026-03-14 15:45:032026-03-14 15:45:03cm925owcd000007mvhzxb6khn
+1		33?
+cmmqhybal000407o5e6ozhv9cn8nn8n_serviceenvdoneUpdate environment2026-03-14 15:44:562026-03-14 15:44:56cm925owcd000007mvhzxb6khn
+cmmqhxwde000307o5hakj4pkdn8nn8n_servicedeploymentdoneDeploy service2026-03-14 15:44:372026-03-14 15:44:38cm925owcd000007mvhzxb6khn
+1		33?
+cmmqhxprd000207o51bimggf5n8nn8n_serviceenvdoneUpdate environment2026-03-14 15:44:282026-03-14 15:44:28cm925owcd000007mvhzxb6khn
+1		33?
+cmmqhxj66000107o5a9ch2783n8nn8n_serviceenvdoneUpdate environment2026-03-14 15:44:202026-03-14 15:44:20cm925owcd000007mvhzxb6khn
+cmmqhslg7000007o50wir9psfn8nn8n_servicedeploymentdoneDeploy service2026-03-14 15:40:292026-03-14 15:41:16cm925owcd000007mvhzxb6khn
+cmmqgs32a003007qr3syh6h2on8nn8n_servicedeploymentdoneDeploy service2026-03-14 15:12:062026-03-14 15:12:06cm925owcd000007mvhzxb6khn
+cmmqgrlqt002z07qr5s5y9syon8nn8n_servicedeploymentdoneDeploy service2026-03-14 15:11:432026-03-14 15:11:45cm925owcd000007mvhzxb6khn
+cmmqgrl5t002y07qrbi5h1ajhn8nn8n_servicedeploymentdoneDeploy service2026-03-14 15:11:432026-03-14 15:11:43cm925owcd000007mvhzxb6khn
+1		33?
+cmmqgria7002x07qrgcphhey1n8nn8n_serviceenvdoneUpdate environment2026-03-14 15:11:392026-03-14 15:11:39cm925owcd000007mvhzxb6khn
+cmmqgk5hg002w07qrfnxh9f42n8nbrowserlessdeploymentdoneDeploy service2026-03-14 15:05:562026-03-14 15:06:51cm925owcd000007mvhzxb6khn
+{		33?
+cmmqgifh1002u07qr8qg1h1pcauthdoneUser phakorn.sila@gmail.com logged in from 49.228.35.922026-03-14 15:04:352026-03-14 15:04:35cm925owcd000007mvhzxb6khnyz
+cmmpohfkc002s07qr3n4ahil6n8nn8n_servicevolumeBackupdoneBackup volume2026-03-14 02:00:002026-03-14 02:00:00
+cmmoixz4o002r07qr79lv82ajn8nn8n_servicedeploymentdoneDeploy service2026-03-13 06:37:072026-03-13 06:37:09cm925owcd000007mvhzxb6khn
+cmmoixqg9002q07qr5x2224rfn8nn8n_servicedeploymentdoneDeploy service2026-03-13 06:36:562026-03-13 06:36:56cm925owcd000007mvhzxb6khn
+cmmoixnml002p07qrh1e5dv5on8nn8n_servicedeploymentdoneDeploy service2026-03-13 06:36:532026-03-13 06:36:54cm925owcd000007mvhzxb6khn
+cmmoixmvb002o07qrark6ejgan8nn8n_servicedeploymentdoneDeploy service2026-03-13 06:36:522026-03-13 06:36:52cm925owcd000007mvhzxb6khnyu
+cmmo91kxd002n07qr6v2u040fn8nn8n_servicevolumeBackupdoneBackup volume2026-03-13 02:00:002026-03-13 02:00:00
+cmmnl1qg1002m07qr5p4fg3qon8nn8n_servicedeploymentdoneDeploy service2026-03-12 14:48:162026-03-12 14:48:18cm925owcd000007mvhzxb6khn
+1		33?
+cmmnl1oex002l07qrb65h9k77n8nn8n_serviceenvdoneUpdate environment2026-03-12 14:48:132026-03-12 14:48:13cm925owcd000007mvhzxb6khn
+{		33?
+cmmnkzfuh002k07qrajho1h92authdoneUser phakorn.sila@gmail.com logged in from 49.228.35.922026-03-12 14:46:292026-03-12 14:46:29cm925owcd000007mvhzxb6khnyq
+cmmmtlq8n002h07qrcwlpcojyn8nn8n_servicevolumeBackupdoneBackup volume2026-03-12 02:00:002026-03-12 02:00:00
+cmmmsrsgm002g07qr7i7cfhazn8nn8n_servicevolumeBackupdoneBackup volume2026-03-12 01:36:432026-03-12 01:36:43cm925owcd000007mvhzxb6khn
+cmnjoqbkp000t06q2char8zdxn8nn8n_servicevolumeBackupdoneBackup volume2026-04-04 02:00:002026-04-04 02:00:00y
+cmni9agw8000s06q22rw669p4n8nn8n_servicevolumeBackupdoneBackup volume2026-04-03 02:00:002026-04-03 02:00:00y
+cmngtum8q000r06q2hvsghfcfn8nn8n_servicevolumeBackupdoneBackup volume2026-04-02 02:00:002026-04-02 02:00:00y
+cmnfeerka000q06q2cn826rvvn8nn8n_servicevolumeBackupdoneBackup volume2026-04-01 02:00:002026-04-01 02:00:00y
+cmndyywwj000p06q2cap9981mn8nn8n_servicevolumeBackupdoneBackup volume2026-03-31 02:00:002026-03-31 02:00:00y
+cmncjj28p000o06q29q6d0jvun8nn8n_servicevolumeBackupdoneBackup volume2026-03-30 02:00:002026-03-30 02:00:00
+cmnc0v11b000n06q27l4e9fwrn8nn8n_servicedeploymentdoneDeploy service2026-03-29 17:17:252026-03-29 17:17:25cm925owcd000007mvhzxb6khn
+}		33?
+cmnc0urfy000m06q24ccybox9authdoneUser phakorn.sila@gmail.com logged in from 49.228.35.1302026-03-29 17:17:132026-03-29 17:17:13cm925owcd000007mvhzxb6khny
+cmnb437ko000k06q20xdc6o13n8nn8n_servicevolumeBackupdoneBackup volume2026-03-29 02:00:002026-03-29 02:00:00y
+cmn9oncw8000j06q27ihh3i2vn8nn8n_servicevolumeBackupdoneBackup volume2026-03-28 02:00:002026-03-28 02:00:00y
+cmn897i91000i06q2elsqc3rqn8nn8n_servicevolumeBackupdoneBackup volume2026-03-27 02:00:002026-03-27 02:00:00y
+cmn6trnki000h06q2189u7hd9n8nn8n_servicevolumeBackupdoneBackup volume2026-03-26 02:00:002026-03-26 02:00:00y
+cmn5ebsx5000g06q24rd08281n8nn8n_servicevolumeBackupdoneBackup volume2026-03-25 02:00:002026-03-25 02:00:00y
+cmn3yvy8n000f06q2h3hwcvhbn8nn8n_servicevolumeBackupdoneBackup volume2026-03-24 02:00:002026-03-24 02:00:00y
+cmn2jg3ky000e06q2hf5phyyrn8nn8n_servicevolumeBackupdoneBackup volume2026-03-23 02:00:002026-03-23 02:00:00y
+cmn1408wr000d06q28hwife1fn8nn8n_servicevolumeBackupdoneBackup volume2026-03-22 02:00:002026-03-22 02:00:00y
+cmmzoke97000c06q27bv0etckn8nn8n_servicevolumeBackupdoneBackup volume2026-03-21 02:00:002026-03-21 02:00:00
+cmmy9dsvw000b06q281aq3bvyn8ngotenbergdeploymentdoneDeploy service2026-03-20 02:07:112026-03-20 02:07:29cm925owcd000007mvhzxb6khn
+		33?
+cmmy9cqdr000906q2et31emodauthdoneUser phakorn.sila@gmail.com logged in from 184.22.176.2162026-03-20 02:06:222026-03-20 02:06:22cm925owcd000007mvhzxb6khny
+cmmy94jkp000706q299w28lyun8nn8n_servicevolumeBackupdoneBackup volume2026-03-20 02:00:002026-03-20 02:00:00y
+cmmwtoox3000606q2dx768l58n8nn8n_servicevolumeBackupdoneBackup volume2026-03-19 02:00:002026-03-19 02:00:00y
+cmmve8u8u000506q2fftp4j1pn8nn8n_servicevolumeBackupdoneBackup volume2026-03-18 02:00:002026-03-18 02:00:00y
+cmmtyszkx000406q2cz11fzo0n8nn8n_servicevolumeBackupdoneBackup volume2026-03-17 02:00:002026-03-17 02:00:00y
+cmmsjd4we000306q227v67ngzn8nn8n_servicevolumeBackupdoneBackup volume2026-03-16 02:00:002026-03-16 02:00:00
+1		33?
+cmmryz0yq000206q234ug7gyjn8nn8n_serviceenvdoneUpdate environment2026-03-15 16:29:092026-03-15 16:29:09cm925owcd000007mvhzxb6khn
+cmmrw80hd000106q23k646ndmn8npgadmindeploymentdoneDeploy service2026-03-15 15:12:092026-03-15 15:12:09cm925owcd000007mvhzxb6khny
+cmmr3xa98000006q2cfoy00imn8nn8n_servicevolumeBackupdoneBackup volume2026-03-15 02:00:002026-03-15 02:00:00
+cmmqk8lp4000d07o53q9t2hv5n8npgadmindeploymentdoneDeploy service2026-03-14 16:48:552026-03-14 16:49:08cm925owcd000007mvhzxb6khn
+cmmqibjqe000b07o50ddwe04an8nn8n_servicedeploymentdoneDeploy service2026-03-14 15:55:132026-03-14 15:55:13cm925owcd000007mvhzxb6khn
+cmmqiaxp2000a07o5cn8zfcb1n8nn8n_servicedeploymentdoneDeploy service2026-03-14 15:54:452026-03-14 15:54:45cm925owcd000007mvhzxb6khn
+cmoku6gwo000407pif2m99ncxn8nn8n_servicevolumeBackupdoneBackup volume2026-04-30 02:00:002026-04-30 02:00:00y
+cmojeqm8a000307pib5b2bu5nn8nn8n_servicevolumeBackupdoneBackup volume2026-04-29 02:00:002026-04-29 02:00:00y
+cmohzarkt000207piej1m2f9fn8nn8n_servicevolumeBackupdoneBackup volume2026-04-28 02:00:002026-04-28 02:00:00y
+cmogjuwwh000107piax2n7532n8nn8n_servicevolumeBackupdoneBackup volume2026-04-27 02:00:002026-04-27 02:00:00y
+cmof4f28v000007pid3ki9xw8n8nn8n_servicevolumeBackupdoneBackup volume2026-04-26 02:00:002026-04-26 02:00:00y
+cmodoz7kx001k06q24hrf93svn8nn8n_servicevolumeBackupdoneBackup volume2026-04-25 02:00:002026-04-25 02:00:00y
+cmoc9jcwj001j06q29a9w2c8ln8nn8n_servicevolumeBackupdoneBackup volume2026-04-24 02:00:002026-04-24 02:00:00y
+cmoau3i87001i06q27zurcfnmn8nn8n_servicevolumeBackupdoneBackup volume2026-04-23 02:00:002026-04-23 02:00:00y
+cmo9ennkq001h06q24yud1e93n8nn8n_servicevolumeBackupdoneBackup volume2026-04-22 02:00:002026-04-22 02:00:00y
+cmo7z7swe001g06q2533tb1c9n8nn8n_servicevolumeBackupdoneBackup volume2026-04-21 02:00:002026-04-21 02:00:00y
+cmo6jry8y001f06q223824uuin8nn8n_servicevolumeBackupdoneBackup volume2026-04-20 02:00:002026-04-20 02:00:00y
+cmo54c3k8001e06q29x6x1c2on8nn8n_servicevolumeBackupdoneBackup volume2026-04-19 02:00:002026-04-19 02:00:00y
+cmo3ow8wm001d06q22fj33tmmn8nn8n_servicevolumeBackupdoneBackup volume2026-04-18 02:00:002026-04-18 02:00:00y
+cmo29ge88001c06q2arqo05yxn8nn8n_servicevolumeBackupdoneBackup volume2026-04-17 02:00:002026-04-17 02:00:00y
+cmo0u0jkn001b06q2dahmaetbn8nn8n_servicevolumeBackupdoneBackup volume2026-04-16 02:00:002026-04-16 02:00:00y
+cmnzekow8001a06q25arec25kn8nn8n_servicevolumeBackupdoneBackup volume2026-04-15 02:00:002026-04-15 02:00:00y
+cmnxz4u8h001906q24821cddln8nn8n_servicevolumeBackupdoneBackup volume2026-04-14 02:00:002026-04-14 02:00:00y
+cmnwjozky001806q2ccsy9nfon8nn8n_servicevolumeBackupdoneBackup volume2026-04-13 02:00:002026-04-13 02:00:00y
+cmnv494wk001706q2629dfh2fn8nn8n_servicevolumeBackupdoneBackup volume2026-04-12 02:00:002026-04-12 02:00:00
+cmnv1qk40001606q21kiubaajn8npgadmindeploymentdoneDeploy service2026-04-12 00:49:342026-04-12 00:49:34cm925owcd000007mvhzxb6khn
+cmnv1qh49001506q236pv933dn8nbrowserlessdeploymentdoneDeploy service2026-04-12 00:49:302026-04-12 00:49:30cm925owcd000007mvhzxb6khn
+cmnv1qfxt001406q2dgcshs71n8ngotenbergdeploymentdoneDeploy service2026-04-12 00:49:282026-04-12 00:49:28cm925owcd000007mvhzxb6khn
+cmnv1qbsn001306q2ht5m4b3wn8nn8n_servicedeploymentdoneDeploy service2026-04-12 00:49:232026-04-12 00:49:23cm925owcd000007mvhzxb6khn
+}		33?
+cmnv1q39y001206q2d982d4okauthdoneUser phakorn.sila@gmail.com logged in from 49.228.105.762026-04-12 00:49:122026-04-12 00:49:12cm925owcd000007mvhzxb6khny
+cmntota88001006q279c65dnzn8nn8n_servicevolumeBackupdoneBackup volume2026-04-11 02:00:002026-04-11 02:00:00y
+cmns9dfku000z06q257iuc332n8nn8n_servicevolumeBackupdoneBackup volume2026-04-10 02:00:002026-04-10 02:00:00y
+cmnqtxkwk000y06q2hzuu99ubn8nn8n_servicevolumeBackupdoneBackup volume2026-04-09 02:00:002026-04-09 02:00:00y
+cmnpehq8s000x06q25rkl2t1dn8nn8n_servicevolumeBackupdoneBackup volume2026-04-08 02:00:002026-04-08 02:00:00y
+cmnnz1vkm000w06q2364r89gtn8nn8n_servicevolumeBackupdoneBackup volume2026-04-07 02:00:002026-04-07 02:00:00y
+cmnmjm0wg000v06q28khe2azhn8nn8n_servicevolumeBackupdoneBackup volume2026-04-06 02:00:002026-04-06 02:00:00y
+cmnl46687000u06q2fn9q6so7n8nn8n_servicevolumeBackupdoneBackup volume2026-04-05 02:00:002026-04-05 02:00:00
+	p	[	F	1	
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-front
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aiinfar
+doc_aidoc-ai-back
+noiamgayipetto-service
+noiamgaygay-postgres-service
+noiamgaygay-postgres-service
+noiamgaygay-compose
+noiamgayapp-gay-service
+n8npgadmin
+n8npgadmin
+n8npgadmin
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+doc_aidoc-ai-front
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-front
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-front
+doc_aidoc-ai-back
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service~
+n8nn8n_service}
+n8nn8n_servicez
+n8nn8n_servicey
+n8nn8n_servicex
+n8nn8n_servicew
+n8nn8n_servicev
+n8nn8n_serviceu
+n8nn8n_servicet
+n8nn8n_services
+n8nn8n_serviceq
+n8nn8n_servicep
+n8nn8n_serviceo
+n8nn8n_servicen
+n8nn8n_servicem
+n8nn8n_servicel
+n8nn8n_servicek
+n8nn8n_servicej
+n8nn8n_servicei
+n8nn8n_serviceh
+n8nn8n_servicef
+n8nn8n_servicee
+n8nn8nR
+n8nn8nQ
+n8ngotenberg
+n8ngotenberg
+n8nbrowserless
+n8nbrowserless|)
+lusiaa-servicelusiaa-backend-composed)
+lusiaa-servicelusiaa-backend-composeC)
+lusiaa-servicelusiaa-backend-composeB)
+lusiaa-servicelusiaa-backend-composeA
+doc_aiinfar
+doc_aiinfar
+doc_aiinfar
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-front
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+doc_aidoc-ai-back
+	m	K	)	
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgaygay-postgres-service
+noiamgaygay-postgres-service
+noiamgaygay-compose
+noiamgayapp-gay-service
+n8npgadmin
+n8npgadmin
+n8npgadmin
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+n8nn8n_service
+test_easypaneltest_service
+test_easypaneltest_service
+reverse_proxyreverse_serviceP!
+reverse_proxyreverse_serviceN!
+reverse_proxyreverse_serviceM!
+reverse_proxyreverse_serviceL!
+reverse_proxyreverse_serviceK!
+reverse_proxyreverse_serviceJ
+reverse_proxym-serviceF
+reverse_proxym-serviceE
+reverse_proxyapp_serviceI
+reverse_proxyapp_serviceH
+reverse_proxyapp_serviceG(
+noiamgaysuper-redis-gay-use-service
+noiamgayredis-service@
+noiamgaypostgres-service? 
+noiamgaypgadmin-web-service> 
+noiamgaypgadmin-web-service
+noiamgaypgadmin-web-service
+noiamgaypgadmin-web-service
+noiamgaypgadmin-web-service	 
+noiamgaypgadmin-web-service
+noiamgaymongo-service=
+noiamgaymongo-service:
+noiamgaymongo-service
+noiamgayipetto-service<
+noiamgayipetto-service8
+noiamgayipetto-service7
+noiamgayipetto-service6
+noiamgayipetto-service5
+noiamgayipetto-service4
+noiamgayipetto-service3
+noiamgayipetto-service2
+noiamgayipetto-service1
+noiamgayipetto-service0
+noiamgayipetto-service/
+noiamgayipetto-service.
+noiamgayipetto-service-
+noiamgayipetto-service,
+noiamgayipetto-service+
+noiamgayipetto-service*
+noiamgayipetto-service)
+noiamgayipetto-service(
+noiamgayipetto-service'
+noiamgayipetto-service&
+noiamgayipetto-service%
+noiamgayipetto-service$
+noiamgayipetto-service#
+noiamgayipetto-service"
+noiamgayipetto-service!
+noiamgayipetto-service 
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+noiamgayipetto-service
+1		33?
+cmpk6qpw2000z07piheiaaoamdoc_aidoc-ai-frontenvdoneUpdate environment2026-05-24 19:43:362026-05-24 19:43:36cm925owcd000007mvhzxb6khn
+cmpk6qaro000y07pibwbx8gzfdoc_aidoc-ai-frontdeploymentkilledDeploy service: feat: add Dockerfiles, .dockerignore, and remove tracked MinIO data2026-05-24 19:43:162026-05-24 19:43:44cm925owcd000007mvhzxb6khnn
+cmpk6fzb6000x07pi27540u4jdoc_aidoc-ai-frontdeploymenterrorDeploy service: feat: add Dockerfiles, .dockerignore, and remove tracked MinIO data2026-05-24 19:35:152026-05-24 19:35:17cm925owcd000007mvhzxb6khn
+cmpk6e4mu000w07picvpx9dubdoc_aidoc-ai-frontdeploymenterrorDeploy service: feat: add Dockerfiles, .dockerignore, and remove tracked MinIO data2026-05-24 19:33:482026-05-24 19:33:51cm925owcd000007mvhzxb6khn
+		33?
+cmpjygnq9000u07pih5dc8zrcauthdoneUser phakorn.sila@gmail.com logged in from 49.228.106.1792026-05-24 15:51:502026-05-24 15:51:50cm925owcd000007mvhzxb6khny
+cmpj4qwws000s07pi0k0o7byvn8nn8n_servicevolumeBackupdoneBackup volume2026-05-24 02:00:002026-05-24 02:00:00y
+cmphpb28k000r07pi2gir80ain8nn8n_servicevolumeBackupdoneBackup volume2026-05-23 02:00:002026-05-23 02:00:00y
+cmpg9v7kp000q07pi3mm139eqn8nn8n_servicevolumeBackupdoneBackup volume2026-05-22 02:00:002026-05-22 02:00:00y
+cmpeufcww000p07picnsi3toqn8nn8n_servicevolumeBackupdoneBackup volume2026-05-21 02:00:002026-05-21 02:00:00y
+cmpdezi8a000o07pihb1j35n3n8nn8n_servicevolumeBackupdoneBackup volume2026-05-20 02:00:002026-05-20 02:00:00y
+cmpbzjnkc000n07pigwzkd853n8nn8n_servicevolumeBackupdoneBackup volume2026-05-19 02:00:002026-05-19 02:00:00y
+cmpak3swh000m07pi99zs76knn8nn8n_servicevolumeBackupdoneBackup volume2026-05-18 02:00:002026-05-18 02:00:00y
+cmp94ny8m000l07pi4avy1iu3n8nn8n_servicevolumeBackupdoneBackup volume2026-05-17 02:00:002026-05-17 02:00:00y
+cmp7p83kq000k07pi5h4z2eq1n8nn8n_servicevolumeBackupdoneBackup volume2026-05-16 02:00:002026-05-16 02:00:00y
+cmp69s8wl000j07pi7cemhvtzn8nn8n_servicevolumeBackupdoneBackup volume2026-05-15 02:00:002026-05-15 02:00:00y
+cmp4uce8x000i07pignizaz1zn8nn8n_servicevolumeBackupdoneBackup volume2026-05-14 02:00:002026-05-14 02:00:00y
+cmp3ewjkq000h07pid1b1axlqn8nn8n_servicevolumeBackupdoneBackup volume2026-05-13 02:00:002026-05-13 02:00:00y
+cmp1zgowq000g07piak2rdbygn8nn8n_servicevolumeBackupdoneBackup volume2026-05-12 02:00:002026-05-12 02:00:00y
+cmp0k0u87000f07pi6wwkg4cwn8nn8n_servicevolumeBackupdoneBackup volume2026-05-11 02:00:002026-05-11 02:00:00y
+cmoz4kzl1000e07pigwaj7o49n8nn8n_servicevolumeBackupdoneBackup volume2026-05-10 02:00:002026-05-10 02:00:00y
+cmoxp54wt000d07pi2g1j2pdan8nn8n_servicevolumeBackupdoneBackup volume2026-05-09 02:00:002026-05-09 02:00:00y
+cmow9pa8h000c07pi18ne34t1n8nn8n_servicevolumeBackupdoneBackup volume2026-05-08 02:00:002026-05-08 02:00:00y
+cmouu9fk9000b07piccgiew5jn8nn8n_servicevolumeBackupdoneBackup volume2026-05-07 02:00:002026-05-07 02:00:00y
+cmotetkwl000a07pi7e2r8c2xn8nn8n_servicevolumeBackupdoneBackup volume2026-05-06 02:00:002026-05-06 02:00:00y
+cmorzdq8j000907pi0k6x8kj9n8nn8n_servicevolumeBackupdoneBackup volume2026-05-05 02:00:002026-05-05 02:00:00y
+cmoqjxvks000807picah7fcebn8nn8n_servicevolumeBackupdoneBackup volume2026-05-04 02:00:002026-05-04 02:00:00y
+cmop4i0we000707pidhzj47rqn8nn8n_servicevolumeBackupdoneBackup volume2026-05-03 02:00:002026-05-03 02:00:00y
+cmonp268g000607pibwa2hgdun8nn8n_servicevolumeBackupdoneBackup volume2026-05-02 02:00:002026-05-02 02:00:00y
+cmom9mbks000507pi75at2x2pn8nn8n_servicevolumeBackupdoneBackup volume2026-05-01 02:00:002026-05-01 02:00:00
+cmpk7zp2k001n07pi0ye4bj1bdoc_aidoc-ai-frontdeploymentdoneDeploy service: fix: join easypanel network so backend App service can reach postgres/redis/minio2026-05-24 20:18:342026-05-24 20:19:27cm925owcd000007mvhzxb6khn
+1		33?
+cmpk7zob6001m07pifpekbytzdoc_aidoc-ai-frontenvdoneUpdate environment2026-05-24 20:18:332026-05-24 20:18:33cm925owcd000007mvhzxb6khn
+1		33?
+cmpk7z8fl001l07pi3u9e769edoc_aidoc-ai-frontenvdoneUpdate environment2026-05-24 20:18:132026-05-24 20:18:13cm925owcd000007mvhzxb6khn
+cmpk7ypq5001k07pif70a43vpdoc_aidoc-ai-backdeploymentdoneDeploy service: fix: join easypanel network so backend App service can reach postgres/redis/minio2026-05-24 20:17:482026-05-24 20:17:49cm925owcd000007mvhzxb6khn
+1		33?
+cmpk7yo4a001j07pib4hnaieadoc_aidoc-ai-backenvdoneUpdate environment2026-05-24 20:17:462026-05-24 20:17:46cm925owcd000007mvhzxb6khn
+1		33?
+cmpk7p5y8001i07pig3iwcttsdoc_aidoc-ai-frontenvdoneUpdate environment2026-05-24 20:10:232026-05-24 20:10:23cm925owcd000007mvhzxb6khn
+cmpk7k0ca001h07pi3iox5xp5doc_aidoc-ai-backdeploymentdoneDeploy service: fix: join easypanel network so backend App service can reach postgres/redis/minio2026-05-24 20:06:222026-05-24 20:06:28cm925owcd000007mvhzxb6khn
+1		33?
+cmpk7jynp001g07pidfm3h0atdoc_aidoc-ai-backenvdoneUpdate environment2026-05-24 20:06:202026-05-24 20:06:20cm925owcd000007mvhzxb6khn
+cmpk7jck1001f07pi6yxp2l1mdoc_aiinfardeploymentdoneDeploy service2026-05-24 20:05:522026-05-24 20:05:52cm925owcd000007mvhzxb6khn
+cmpk7cywe001e07pih8lyb9owdoc_aidoc-ai-backdeploymentdoneDeploy service2026-05-24 20:00:542026-05-24 20:00:54cm925owcd000007mvhzxb6khn
+cmpk7bznw001d07pi43d5a76ydoc_aidoc-ai-backdeploymentdoneDeploy service: fix: add @types/express as explicit devDependency for Docker build2026-05-24 20:00:082026-05-24 20:00:33cm925owcd000007mvhzxb6khn
+cmpk7bz1j001c07pi3o538q51doc_aidoc-ai-backdeploymentdoneDeploy service2026-05-24 20:00:072026-05-24 20:00:08cm925owcd000007mvhzxb6khn
+cmpk70jdg001b07pi47op48nodoc_aidoc-ai-backdeploymenterrorDeploy service: feat: add Dockerfiles, .dockerignore, and remove tracked MinIO data2026-05-24 19:51:142026-05-24 19:51:41cm925owcd000007mvhzxb6khn
+cmpk6uj0f001a07pi0elpgmu4doc_aidoc-ai-backdeploymenterrorDeploy service: feat: add Dockerfiles, .dockerignore, and remove tracked MinIO data2026-05-24 19:46:342026-05-24 19:46:36cm925owcd000007mvhzxb6khn
+cmpk6udgu001907pi3dj34diwdoc_aidoc-ai-frontdeploymentdoneDeploy service2026-05-24 19:46:262026-05-24 19:46:26cm925owcd000007mvhzxb6khn
+cmpk6u2ao001807piezw3apsndoc_aiinfardeploymentdoneDeploy service2026-05-24 19:46:122026-05-24 19:46:12cm925owcd000007mvhzxb6khn
+1		33?
+cmpk6tr66001707pifm7r8hm4doc_aiinfarenvdoneUpdate environment2026-05-24 19:45:572026-05-24 19:45:57cm925owcd000007mvhzxb6khn
+cmpk6thri001607pi0kioc7o2doc_aiinfardeploymentdoneDeploy service2026-05-24 19:45:452026-05-24 19:45:57cm925owcd000007mvhzxb6khn
+cmpk6s9gv001407piazez9g81doc_aidoc-ai-backdeploymenterrorDeploy service: feat: add Dockerfiles, .dockerignore, and remove tracked MinIO data2026-05-24 19:44:482026-05-24 19:44:50cm925owcd000007mvhzxb6khn
+1		33?
+cmpk6s7oq001307piadl32djodoc_aidoc-ai-backenvdoneUpdate environment2026-05-24 19:44:462026-05-24 19:44:46cm925owcd000007mvhzxb6khn
+cmpk6qxlc001107pih96g66kidoc_aidoc-ai-frontdeploymentdoneDeploy service: feat: add Dockerfiles, .dockerignore, and remove tracked MinIO data2026-05-24 19:43:462026-05-24 19:45:05cm925owcd000007mvhzxb6khnkhn
+cmpk6qw39001007pi99hhd6f0doc_aidoc-ai-frontdeploymentdoneDeploy service2026-05-24 19:43:442026-05-24 19:43:44cm925owcd000007mvhzxb6khn
+cmpkrlsla002507pi5vt00063doc_aidoc-ai-backdeploymentdoneDeploy service2026-05-25 05:27:382026-05-25 05:27:38cm925owcd000007mvhzxb6khn
+cmpkrlrgs002407pi1olsg37kdoc_aidoc-ai-frontdeploymentdoneDeploy service2026-05-25 05:27:372026-05-25 05:27:37cm925owcd000007mvhzxb6khn
+cmpkrjhir002307pifupg7ogidoc_aidoc-ai-backdeploymentdoneDeploy service: fix: prevent logout prefetch from deleting auth cookie
+Next.js automatically prefetches <Link> targets that are visible in
+the viewport. The logout Link was being prefetched which caused the
+Route Handler to execute and delete the auth cookie before the user
+ever clicked Logout.
+Fix:
+- Add prefetch={false} to the logout Link in AppShell
+- Add RSC/Next-Router-Prefetch guard to the logout Route Handler as
+  defence-in-depth so a prefetch request is a no-op (204)2026-05-25 05:25:502026-05-25 05:26:26cm925owcd000007mvhzxb6khn
+cmpkrjg4i002207pi565cf8xxdoc_aidoc-ai-frontdeploymentdoneDeploy service: fix: prevent logout prefetch from deleting auth cookie
+Next.js automatically prefetches <Link> targets that are visible in
+the viewport. The logout Link was being prefetched which caused the
+Route Handler to execute and delete the auth cookie before the user
+ever clicked Logout.
+Fix:
+- Add prefetch={false} to the logout Link in AppShell
+- Add RSC/Next-Router-Prefetch guard to the logout Route Handler as
+  defence-in-depth so a prefetch request is a no-op (204)2026-05-25 05:25:492026-05-25 05:27:18cm925owcd000007mvhzxb6khnkhny
+cmpkk6rkj002107pi2htl0k8cn8nn8n_servicevolumeBackupdoneBackup volume2026-05-25 02:00:002026-05-25 02:00:00
+cmpk8riwt002007pigub1e53sdoc_aidoc-ai-frontdeploymentdoneDeploy service: feat: add BACKEND_URL env var for internal Docker network server-side calls2026-05-24 20:40:132026-05-24 20:40:54cm925owcd000007mvhzxb6khn
+1		33?
+cmpk8rgie001z07pieq5o7937doc_aidoc-ai-frontenvdoneUpdate environment2026-05-24 20:40:102026-05-24 20:40:10cm925owcd000007mvhzxb6khn
+cmpk8paxo001y07piajxz3x02doc_aidoc-ai-frontdeploymentdoneDeploy service2026-05-24 20:38:292026-05-24 20:38:29cm925owcd000007mvhzxb6khn
+cmpk8p4pc001x07piby6lcqdadoc_aidoc-ai-frontdeploymentdoneDeploy service: fix: join easypanel network so backend App service can reach postgres/redis/minio2026-05-24 20:38:212026-05-24 20:38:22cm925owcd000007mvhzxb6khn
+cmpk8p47f001w07pi7xsr2us6doc_aidoc-ai-frontdeploymentdoneDeploy service2026-05-24 20:38:202026-05-24 20:38:20cm925owcd000007mvhzxb6khn
+cmpk8p3qt001v07pi79j40e4edoc_aidoc-ai-frontdeploymentdoneDeploy service2026-05-24 20:38:202026-05-24 20:38:20cm925owcd000007mvhzxb6khn
+1		33?
+cmpk8p2bu001u07pi271k0nltdoc_aidoc-ai-frontenvdoneUpdate environment2026-05-24 20:38:182026-05-24 20:38:18cm925owcd000007mvhzxb6khn
+cmpk8nobv001t07pi7dbk1gcvdoc_aidoc-ai-frontdeploymentdoneDeploy service2026-05-24 20:37:132026-05-24 20:37:13cm925owcd000007mvhzxb6khn
+cmpk8nmsk001s07pi6k3z6r6zdoc_aidoc-ai-frontdeploymentdoneDeploy service: fix: join easypanel network so backend App service can reach postgres/redis/minio2026-05-24 20:37:112026-05-24 20:37:12cm925owcd000007mvhzxb6khn
+1		33?
+cmpk8nm26001r07pi2yiuh6qudoc_aidoc-ai-frontenvdoneUpdate environment2026-05-24 20:37:102026-05-24 20:37:10cm925owcd000007mvhzxb6khn
+cmpk8945l001q07pictl52zgsdoc_aidoc-ai-frontdeploymentdoneDeploy service2026-05-24 20:25:542026-05-24 20:25:54cm925owcd000007mvhzxb6khn
+cmpk892vq001p07piao5s1fyodoc_aidoc-ai-backdeploymentdoneDeploy service2026-05-24 20:25:522026-05-24 20:25:52cm925owcd000007mvhzxb6khn
+cmpk7zr4z001o07pi1643e9acdoc_aidoc-ai-backdeploymentdoneDeploy service: fix: join easypanel network so backend App service can reach postgres/redis/minio2026-05-24 20:18:372026-05-24 20:18:37cm925owcd000007mvhzxb6khn
+	y	i	Y	7
+T	G	
+deployment
+deployment
+	env
+deployment
+deployment
+deployment
+deployment
+auth
+deployment
+deployment
+	env
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+	env
+deployment
+deployment
+	env
+deployment
+deployment
+	env
+deployment
+deployment
+deployment
+auth
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+deployment
+deployment
+deployment
+deployment
+auth
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+deployment
+auth
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+deployment
+auth
+cvolumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+	env
+deployment
+volumeBackup
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+	env
+deployment
+deployment
+deployment
+deployment
+deployment~
+env}
+deployment|
+auth{
+volumeBackupz
+deploymenty
+deploymentx
+deploymentw
+deploymentv
+destroyd
+deploymentj
+envi
+volumeBackuph
+backupg
+envf
+deploymente
+backup^
+volumeBackupu
+deploymentt
+envs
+authr
+3volumeBackupq
+volumeBackupp
+volumeBackupo
+deploymentn
+deploymentm
+deploymentl
+envk
+destroyR
+deploymentQ
+destroyP
+authO
+deploymentN
+deploymentM
+deploymentL
+deploymentK
+deploymentJ
+destroyI
+deploymentH
+deploymentG
+destroyF
+deploymentE
+authD
+deploymentC
+deploymentB
+deploymentA
+<destroy@
+destroy?
+destroy>
+destroy=
+destroy<
+auth;
+start:
+auth9
+deployment8
+deployment7
+deployment6
+deployment5
+deployment4
+deployment3
+deployment2
+deployment1
+deployment0
+deployment/
+deployment.
+deployment-
+deployment,
+deployment+
+deployment*
+deployment)
+deployment(
+deployment'
+deployment&
+deployment%
+deployment$
+deployment#
+deployment"
+deployment!
+deployment 
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+destroy
+deployment
+auth
+auth
+deployment
+	stop
+deployment
+deployment	
+deployment
+Edestroy
+destroy
+destroy
+stop
+destroy
+destroy
+	auth
+	v	d	R	@	.	
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+deployment
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+deployment
+deployment
+deployment
+deployment
+volumeBackup
+deployment
+deployment
+deployment
+deployment
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackup
+volumeBackupz
+volumeBackupu
+volumeBackupq
+volumeBackupp
+volumeBackupo
+volumeBackuph
+stop
+stop
+start:
+env}
+envs
+envk
+envi
+envf
+destroyd
+destroyR
+destroyP
+destroyI
+destroyF
+destroy@
+destroy?
+destroy>
+destroy=
+destroy<
+destroy
+destroy
+destroy
+destroy
+destroy
+destroy
+deployment
+cmpzajeoq002p07pihbtgfosddoc_aidoc-ai-frontdeploymentdoneDeploy service: fix(ocr): cast through unknown for @google-cloud/vision lazy import2026-06-04 09:26:262026-06-04 09:27:16cm925owcd000007mvhzxb6khn
+cmpzaiw3f002o07pi8fesa3cwdoc_aidoc-ai-backdeploymentdoneDeploy service: fix(ocr): cast through unknown for @google-cloud/vision lazy import2026-06-04 09:26:022026-06-04 09:26:19cm925owcd000007mvhzxb6khn
+cmpzaflzb002n07pig94t84e0doc_aidoc-ai-backdeploymenterrorDeploy service: fix(docker): use --no-frozen-lockfile to tolerate lockfile drift2026-06-04 09:23:292026-06-04 09:23:48cm925owcd000007mvhzxb6khn
+cmpzadhgp002m07pifcxn8v5adoc_aidoc-ai-backdeploymenterrorDeploy service: chore: sync pnpm-lock.yaml for @google-cloud/vision2026-06-04 09:21:492026-06-04 09:21:55cm925owcd000007mvhzxb6khn
+cmpzac8l1002l07pi20emazuvdoc_aidoc-ai-backdeploymenterrorDeploy service: update thai2026-06-04 09:20:512026-06-04 09:20:55cm925owcd000007mvhzxb6khn
+cmpzaaa8k002k07pi9u3db8a6doc_aidoc-ai-frontdeploymenterrorDeploy service: update thai2026-06-04 09:19:202026-06-04 09:20:24cm925owcd000007mvhzxb6khn
+cmpza9mod002j07pi61ss6yg5doc_aidoc-ai-backdeploymenterrorDeploy service: update thai2026-06-04 09:18:502026-06-04 09:19:34cm925owcd000007mvhzxb6khnhn
+1		33?
+cmpza9lrz002i07pigidjaqhldoc_aidoc-ai-backenvdoneUpdate environment2026-06-04 09:18:482026-06-04 09:18:48cm925owcd000007mvhzxb6khn
+{		33?
+cmpza5h25002h07pi80r16bycauthdoneUser phakorn.sila@gmail.com logged in from 184.22.18.702026-06-04 09:15:362026-06-04 09:15:36cm925owcd000007mvhzxb6khny
+cmpyula8b002f07pidcnocjyin8nn8n_servicevolumeBackupdoneBackup volume2026-06-04 02:00:002026-06-04 02:00:00y
+cmpxf5fkf002e07pi6yiohczcn8nn8n_servicevolumeBackupdoneBackup volume2026-06-03 02:00:002026-06-03 02:00:00y
+cmpvzpkw3002d07pi9fs593thn8nn8n_servicevolumeBackupdoneBackup volume2026-06-02 02:00:002026-06-02 02:00:00y
+cmpuk9q8c002c07pi9pu7bbxin8nn8n_servicevolumeBackupdoneBackup volume2026-06-01 02:00:002026-06-01 02:00:00y
+cmpt4tvk5002b07pi47y83jg7n8nn8n_servicevolumeBackupdoneBackup volume2026-05-31 02:00:002026-05-31 02:00:00y
+cmprpe0wf002a07pibnl6efofn8nn8n_servicevolumeBackupdoneBackup volume2026-05-30 02:00:002026-05-30 02:00:00y
+cmpq9y685002907pi113h8iehn8nn8n_servicevolumeBackupdoneBackup volume2026-05-29 02:00:002026-05-29 02:00:00y
+cmpouibkm002807pigc713k5kn8nn8n_servicevolumeBackupdoneBackup volume2026-05-28 02:00:002026-05-28 02:00:00y
+cmpnf2gw9002707pi48b16riin8nn8n_servicevolumeBackupdoneBackup volume2026-05-27 02:00:002026-05-27 02:00:00y
+cmplzmm8x002607pih0bx1ixrn8nn8n_servicevolumeBackupdoneBackup volume2026-05-26 02:00:002026-05-26 02:00:00

@@ -84,6 +84,11 @@ export interface DocumentSummaryResponse {
     pendingReview: number;
     approved: number;
     notRelevant: number;
+    bySource: {
+      upload: number;
+      website: number;
+      api: number;
+    };
   };
   ocr: {
     completed: number;
@@ -128,12 +133,13 @@ export interface OcrTextResponse {
   textLength: number;
 }
 
-export function listDocuments(params: { limit?: number; offset?: number; status?: string; search?: string; ignore?: string } = {}) {
-  const { limit = 25, offset = 0, status, search, ignore } = params;
+export function listDocuments(params: { limit?: number; offset?: number; status?: string; search?: string; ignore?: string; sourceType?: string } = {}) {
+  const { limit = 25, offset = 0, status, search, ignore, sourceType } = params;
   const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (status) qs.set('status', status);
   if (search?.trim()) qs.set('search', search.trim());
   if (ignore?.trim()) qs.set('ignore', ignore.trim());
+  if (sourceType) qs.set('sourceType', sourceType);
   return apiGet<DocumentListResponse>(`/documents?${qs}`);
 }
 

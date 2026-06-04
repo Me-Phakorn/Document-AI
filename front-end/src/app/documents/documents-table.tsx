@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckSquare2, ExternalLink, Pencil, Square } from 'lucide-react';
+import { CheckSquare2, ExternalLink, Link as LinkIcon, Pencil, Square, UploadCloud, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useTransition } from 'react';
 import { StatusBadge } from '@/components/status-badge';
@@ -201,17 +201,32 @@ export function DocumentsTable({ items }: Props) {
                       {formatDateTime(dv.createdAt)}
                     </td>
                     <td className="px-3 py-1.5">
-                      {dv.sourceUrl ? (
-                        <a
-                          className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
-                          href={dv.sourceUrl}
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          PDF <ExternalLink size={11} />
-                        </a>
+                      {dv.document?.sourceType === 'WEBSITE_SCAN' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-blue/30 bg-blue/5 px-2 py-0.5 text-[10px] font-medium text-blue">
+                          <LinkIcon size={10} aria-hidden="true" />
+                          From link
+                          {dv.sourceUrl ? (
+                            <a
+                              className="ml-1 inline-flex items-center gap-0.5 text-blue hover:underline"
+                              href={dv.sourceUrl}
+                              rel="noreferrer"
+                              target="_blank"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink size={9} />
+                            </a>
+                          ) : null}
+                        </span>
+                      ) : dv.document?.sourceType === 'API' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber/30 bg-amber/5 px-2 py-0.5 text-[10px] font-medium text-amber">
+                          <Zap size={10} aria-hidden="true" />
+                          API
+                        </span>
                       ) : (
-                        <span className="text-xs text-t3">Upload</span>
+                        <span className="inline-flex items-center gap-1 rounded-full border border-border bg-raised px-2 py-0.5 text-[10px] font-medium text-t2">
+                          <UploadCloud size={10} aria-hidden="true" />
+                          Upload
+                        </span>
                       )}
                     </td>
                     <td className="px-3 py-1.5">

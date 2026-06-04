@@ -1,6 +1,7 @@
 import { Archive, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 import { PageHeader } from '@/components/page-header';
+import { apiBaseUrl } from '@/lib/api-client';
 import { approveReviewItem, confirmReviewNotRelevant, listReviewItems, reReviewItem, requestReviewChanges } from '@/lib/api/review';
 import { AutoRefresh } from './auto-refresh';
 import { ReviewApprovedSection } from './review-approved-section';
@@ -51,7 +52,13 @@ function revalidateReviewPaths() {
 }
 
 export default async function ReviewPage() {
-  const reviewItems = await listReviewItems({ limit: 500 });
+  let reviewItems: Awaited<ReturnType<typeof listReviewItems>>;
+  try {
+    reviewItems = await listReviewItems({ limit: 500 });
+  } catch (error) {
+    console.error('[review] failed to load review items', error);
+    return <ReviewError error={error} />;
+  }
   const all = reviewItems.items;
 
   // Section 1 — รอ Review
@@ -168,6 +175,30 @@ export default async function ReviewPage() {
 
         <NotRelevantSection items={notRelevant} />
       </div>
+    </div>
+  );
+}
+
+function ReviewError({ error }: { error: unknown }) {
+  const message = error instanceof Error ? error.message : 'Unknown error';
+  const status = (error as { status?: number } | null)?.status;
+  return (
+    <div>
+      <PageHeader
+        eyebrow="Review Center"
+        title="Review Report"
+        description="ไม่สามารถโหลดรายการ Review ได้"
+      />
+      <section className="rounded-lg border border-[rgba(207,46,53,0.2)] bg-[rgba(207,46,53,0.06)] p-4 text-sm text-red">
+        <p className="font-semibold">โหลดข้อมูลล้มเหลว</p>
+        <p className="mt-1 text-t2">
+          Backend API ({apiBaseUrl}) ตอบกลับด้วยข้อผิดพลาด{status ? ` (HTTP ${status})` : ''}
+        </p>
+        <p className="mt-2 break-all text-xs text-t3">{message}</p>
+        <p className="mt-3 text-xs text-t3">
+          ลองรีเฟรชหน้า — หากปัญหายังเกิดอยู่ ให้ตรวจสอบสถานะ backend และ logs ใน production
+        </p>
+      </section>
     </div>
   );
 }

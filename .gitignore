@@ -18,3 +18,7 @@ back-end/generated/
 
 .DS_Store
 Thumbs.db
+
+# Raw EasyPanel LMDB dump artifacts — may contain secrets
+Docs/recovery-artifacts/easypanel-lmdb-entries.json
+Docs/recovery-artifacts/easypanel-lmdb-strings.txt

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { DocumentStatus } from '@prisma/client';
+import { DocumentStatus, SourceType } from '@prisma/client';
 import { IsEnum, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
@@ -8,6 +8,11 @@ export class DocumentsListQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(DocumentStatus)
   status?: DocumentStatus;
+
+  @ApiPropertyOptional({ enum: SourceType, description: 'Filter by document source type (UPLOAD vs WEBSITE_SCAN vs API)' })
+  @IsOptional()
+  @IsEnum(SourceType)
+  sourceType?: SourceType;
 
   @ApiPropertyOptional({ type: String, maxLength: 200, description: 'Case-insensitive title search' })
   @IsOptional()

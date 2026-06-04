@@ -1,4 +1,4 @@
-import { AlertTriangle, FileCheck2, FileText, Search, UploadCloud } from 'lucide-react';
+import { AlertTriangle, FileCheck2, FileText, Link as LinkIcon, Search, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
 import { PageHeader } from '@/components/page-header';
 import { apiBaseUrl } from '@/lib/api-client';
@@ -11,17 +11,19 @@ export const dynamic = 'force-dynamic';
 export default async function DocumentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; status?: string; ignore?: string }>;
+  searchParams: Promise<{ search?: string; status?: string; ignore?: string; source?: string }>;
 }) {
   try {
     const params = await searchParams;
     const search = params.search ?? '';
     const status = params.status ?? '';
     const ignore = params.ignore ?? '';
+    const source = params.source === 'upload' || params.source === 'website' ? params.source : '';
+    const sourceType = source === 'upload' ? 'UPLOAD' : source === 'website' ? 'WEBSITE_SCAN' : undefined;
 
     const [summary, documents] = await Promise.all([
       getDocumentSummary(),
-      listDocuments({ limit: 100, offset: 0, search: search || undefined, status: status || undefined, ignore: ignore || undefined }),
+      listDocuments({ limit: 100, offset: 0, search: search || undefined, status: status || undefined, ignore: ignore || undefined, sourceType }),
     ]);
 
     return (
@@ -76,6 +78,11 @@ export default async function DocumentsPage({
             </div>
             <DocumentsFilter currentSearch={search} currentStatus={status} currentIgnore={ignore} />
           </div>
+          <div className="flex flex-wrap items-center gap-1 border-b border-border bg-raised/40 px-3 py-2">
+            <SourceTab label="All" count={summary.documents.totalDocuments} value="" current={source} search={search} status={status} ignore={ignore} />
+            <SourceTab label="Uploaded" icon="upload" count={summary.documents.bySource?.upload ?? 0} value="upload" current={source} search={search} status={status} ignore={ignore} />
+            <SourceTab label="From link" icon="link" count={summary.documents.bySource?.website ?? 0} value="website" current={source} search={search} status={status} ignore={ignore} />
+          </div>
           <DocumentsTable items={documents.items} />
         </section>
       </div>
@@ -83,6 +90,47 @@ export default async function DocumentsPage({
   } catch (error) {
     return <DocumentsError />;
   }
+}
+
+function SourceTab({
+  label,
+  count,
+  value,
+  current,
+  search,
+  status,
+  ignore,
+  icon,
+}: {
+  label: string;
+  count: number;
+  value: '' | 'upload' | 'website';
+  current: string;
+  search: string;
+  status: string;
+  ignore: string;
+  icon?: 'upload' | 'link';
+}) {
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (status) params.set('status', status);
+  if (ignore) params.set('ignore', ignore);
+  if (value) params.set('source', value);
+  const href = params.toString() ? `/documents?${params}` : '/documents';
+  const active = current === value;
+  return (
+    <Link
+      href={href}
+      className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+        active ? 'bg-panel text-t1 shadow-sm border border-border' : 'text-t2 hover:bg-panel/60'
+      }`}
+    >
+      {icon === 'upload' ? <UploadCloud size={12} aria-hidden="true" /> : null}
+      {icon === 'link' ? <LinkIcon size={12} aria-hidden="true" /> : null}
+      <span>{label}</span>
+      <span className={`rounded px-1.5 py-0.5 text-[10px] ${active ? 'bg-accent/10 text-accent' : 'bg-raised text-t3'}`}>{count}</span>
+    </Link>
+  );
 }
 
 function DocumentsError() {

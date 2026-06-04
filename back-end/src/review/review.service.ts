@@ -29,7 +29,7 @@ export class ReviewService {
   ) {}
 
   async list(query: PaginationQueryDto, documentId?: string) {
-    const limit = Math.min(Math.max(Number(query.limit) || 25, 1), 100);
+    const limit = Math.min(Math.max(Number(query.limit) || 25, 1), 500);
     const offset = Math.max(Number(query.offset) || 0, 0);
     const where: Prisma.ReviewItemWhereInput = documentId
       ? { aiAnalysisResult: { documentVersion: { documentId } } }
