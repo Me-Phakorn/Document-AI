@@ -4,6 +4,7 @@ import { AiAnalysisStatus, DocumentStatus, OcrStatus, Prisma, SourceType, Stored
 import type { DocumentVersion } from '@prisma/client';
 import { createHash, randomUUID } from 'node:crypto';
 import { basename, extname } from 'node:path';
+import { spawn } from 'node:child_process';
 import { PDFParse } from 'pdf-parse';
 import { AuditService } from '../audit/audit.service';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
@@ -744,7 +745,21 @@ export class DocumentsService {
   }
 
   private normalizeText(value: string) {
-    return value.replace(/\u0000/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    return value
+      .normalize('NFC')                          // fix decomposed Thai vowels
+      .replace(/[\u0000\uFFFD\u00AD]/g, '')      // null, replacement char, soft hyphen
+      .replace(/\u200B+/g, '')                   // zero-width spaces (OCR artifact)
+      // Collapse spaces between consecutive Thai characters — Tesseract often
+      // inserts a single space between every Thai glyph. Applied twice to cover
+      // overlapping runs.
+      .replace(/([\u0E00-\u0E7F])[ \t]+(?=[\u0E00-\u0E7F])/g, '$1')
+      .replace(/([\u0E00-\u0E7F])[ \t]+(?=[\u0E00-\u0E7F])/g, '$1')
+      .replace(/([\u0E00-\u0E7F\d])\s+([.,])/g, '$1$2')
+      .replace(/\(\s+(?=[\u0E00-\u0E7F\d])/g, '(')
+      .replace(/([\u0E00-\u0E7F\d])\s+\)/g, '$1)')
+      .replace(/[ \t]+/g, ' ')                   // collapse horizontal whitespace
+      .replace(/\n{3,}/g, '\n\n')                // max two consecutive blank lines
+      .trim();
   }
 
   private estimateTextQuality(text: string) {
@@ -765,5 +780,33 @@ export class DocumentsService {
       ...item,
       byteSize: item.byteSize.toString(),
     };
+  }
+
+  async retriggerOcr(documentVersionId: string, context: RegisterContext) {
+    const docVersion = await this.prisma.documentVersion.findUnique({ where: { id: documentVersionId } });
+    if (!docVersion) {
+      throw new NotFoundException({ code: 'DOCUMENT_VERSION_NOT_FOUND', message: 'Document version was not found.' });
+    }
+
+    const args = ['--filter', '@docai/back-end', 'ocr:retry-failed', '--', `--document-version-id=${documentVersionId}`];
+
+    const child = spawn('pnpm', args, {
+      cwd: process.cwd(),
+      detached: true,
+      stdio: 'ignore',
+      env: { ...process.env, X_CORRELATION_ID: context.correlationId },
+    });
+    child.unref();
+
+    await this.audit.record({
+      actorId: context.actorId,
+      action: 'DOCUMENT_OCR_RETRIGGER_REQUESTED',
+      entityType: 'DocumentVersion',
+      entityId: documentVersionId,
+      nextState: { pid: child.pid ?? null, ocrStatus: docVersion.ocrStatus },
+      correlationId: context.correlationId,
+    });
+
+    return { documentVersionId, status: 'TRIGGERED', pid: child.pid ?? null };
   }
 }

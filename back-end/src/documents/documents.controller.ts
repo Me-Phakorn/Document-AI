@@ -100,4 +100,19 @@ export class DocumentsController {
       correlationId: correlationId ?? randomUUID(),
     });
   }
+
+  @Post(':documentVersionId/retrigger-ocr')
+  @ApiOperation({ summary: 'Re-run OCR on a document version using the configured OCR engine (Tesseract / PaddleOCR / Cloud Vision)' })
+  @ApiParam({ name: 'documentVersionId', type: String })
+  @ApiCreatedResponse({ description: 'OCR job triggered asynchronously. Poll the document detail endpoint to check progress.' })
+  retriggerOcr(
+    @Param('documentVersionId') documentVersionId: string,
+    @CurrentUser('id') actorId: string,
+    @Query('correlationId') correlationId: string | undefined,
+  ) {
+    return this.documentsService.retriggerOcr(documentVersionId, {
+      actorId,
+      correlationId: correlationId ?? randomUUID(),
+    });
+  }
 }

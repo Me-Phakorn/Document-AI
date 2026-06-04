@@ -14,7 +14,8 @@
     "prisma:validate": "prisma validate",
     "prisma:migrate:dev": "prisma migrate dev",
     "seed": "tsx prisma/seed.ts",
-    "crawler:bot-fipcs": "tsx src/crawler/scripts/import-bot-fipcs.ts"
+    "crawler:bot-fipcs": "tsx src/crawler/scripts/import-bot-fipcs.ts",
+    "ocr:retry-failed": "tsx src/ocr/scripts/retry-failed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",
@@ -31,6 +32,9 @@
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
+  },
+  "optionalDependencies": {
+    "@google-cloud/vision": "^4.3.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

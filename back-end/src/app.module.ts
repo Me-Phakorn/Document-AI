@@ -16,6 +16,7 @@ import { RulebookModule } from './rulebook/rulebook.module';
 import { SourcesModule } from './sources/sources.module';
 import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
+import { OcrModule } from './ocr/ocr.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { UsersModule } from './users/users.module';
     PromptsModule,
     UsersModule,
     HealthModule,
+    OcrModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

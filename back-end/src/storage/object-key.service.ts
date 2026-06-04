@@ -17,6 +17,10 @@ export class ObjectKeyService {
     return `ocr/${ocrArtifactId}/text/ocr.txt`;
   }
 
+  ocrSearchablePdf(ocrArtifactId: string) {
+    return `ocr/${ocrArtifactId}/searchable/ocr.pdf`;
+  }
+
   reportExport(exportArtifactId: string, extension: string) {
     return `exports/${exportArtifactId}/report.${extension.replace(/^\./, '')}`;
   }

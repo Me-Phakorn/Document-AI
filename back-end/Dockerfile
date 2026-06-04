@@ -1,7 +1,13 @@
-FROM node:22-alpine
+FROM node:22-bookworm-slim
 
-# Build tools needed for some native add-ons
-RUN apk add --no-cache python3 make g++
+# Build tools for native add-ons + OCR tools
+# ocrmypdf orchestrates Tesseract internally and produces searchable PDFs.
+# poppler-utils provides pdftotext for text extraction from the OCR output.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  python3 make g++ \
+  tesseract-ocr tesseract-ocr-tha tesseract-ocr-eng \
+  poppler-utils ghostscript ocrmypdf unpaper \
+  && rm -rf /var/lib/apt/lists/*
 
 # Enable corepack / pnpm
 RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
