@@ -28,7 +28,7 @@ export class CloudVisionAdapter implements IOcrEngineAdapter {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore — optional peer dep; lazy-loaded only when OCR_ENGINE=google-vision
       const mod = await import('@google-cloud/vision');
-      ImageAnnotatorClient = (mod as { ImageAnnotatorClient: typeof ImageAnnotatorClient }).ImageAnnotatorClient;
+      ImageAnnotatorClient = (mod as unknown as { ImageAnnotatorClient: typeof ImageAnnotatorClient }).ImageAnnotatorClient;
     } catch {
       return {
         text: '',
