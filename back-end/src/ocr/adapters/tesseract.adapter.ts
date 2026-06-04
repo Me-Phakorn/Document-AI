@@ -145,11 +145,17 @@ export class TesseractAdapter implements IOcrEngineAdapter {
   // ── Private helpers ───────────────────────────────────────────────────────
 
   /**
-   * Run pdftotext and return the text content.
+   * Run pdftotext and return the text content with explicit page markers.
+   *
    * Does NOT use `-layout` because Thai documents are not columnar in the same
    * way as English — `-layout` often merges or splits Thai lines incorrectly.
    * `-enc UTF-8` guarantees valid UTF-8 output regardless of host locale.
-   * `-nopgbrk` is NOT set so we keep form-feed separators for page counting.
+   *
+   * pdftotext separates pages with form-feed (`\f`) by default. We split on
+   * `\f`, clean each page independently, and re-join with `<<<PAGE n>>>`
+   * markers. This lets downstream AI/review consumers reference specific pages
+   * without needing to re-OCR, and preserves page boundaries even after
+   * whitespace/noise cleanup that would otherwise erase form-feeds.
    */
   private async runPdfToText(pdfPath: string): Promise<string> {
     try {
@@ -158,7 +164,17 @@ export class TesseractAdapter implements IOcrEngineAdapter {
         ['-enc', 'UTF-8', pdfPath, '-'],
         { timeout: 30_000, encoding: 'utf8', maxBuffer: 50 * 1024 * 1024 },
       );
-      return this.cleanOcrText(stdout.trim());
+      const rawPages = stdout.split('\f');
+      // pdftotext often emits a trailing \f producing a final empty page; drop
+      // it so page numbering matches the actual PDF.
+      if (rawPages.length > 1 && rawPages[rawPages.length - 1].trim() === '') {
+        rawPages.pop();
+      }
+      const pages = rawPages.map((raw, index) => {
+        const cleaned = this.cleanOcrText(raw);
+        return `<<<PAGE ${index + 1}>>>\n${cleaned}`.trim();
+      });
+      return pages.join('\n\n');
     } catch {
       return '';
     }
@@ -199,6 +215,22 @@ export class TesseractAdapter implements IOcrEngineAdapter {
       .replace(/\(\s+(?=[\u0E00-\u0E7F\d])/g, '(')
       .replace(/([\u0E00-\u0E7F\d])\s+\)/g, '$1)')
       .replace(/[ \t]+/g, ' ')                   // collapse horizontal whitespace
+      // Drop standalone OCR noise lines. Tesseract on Thai government PDFs
+      // frequently misreads decorative rules, signature underlines, stamps,
+      // and footnote bullets as one-to-three character fragments on their own
+      // line (e.g. "A", "VY", "๑", "๑7", "die"). Real document content is
+      // always longer than three chars, and short structural markers like
+      // numbered items ("1.", "(1)", "[2]", "ก.") all contain punctuation,
+      // so the filter below removes noise without dropping headings or item
+      // numbers. Blank lines are preserved as paragraph breaks.
+      .split('\n')
+      .filter((line) => {
+        const trimmed = line.trim();
+        if (trimmed.length === 0) return true;
+        if (trimmed.length > 3) return true;
+        return /[.()[\]{}:;\-–—]/.test(trimmed);
+      })
+      .join('\n')
       .replace(/\n{3,}/g, '\n\n')                // max two consecutive blank lines
       .trim();
   }
@@ -227,9 +259,15 @@ export class TesseractAdapter implements IOcrEngineAdapter {
     return Math.min(1, 0.4 + ratio * 0.6);
   }
 
-  /** Count pages by form-feed separators that pdftotext inserts between pages. */
+  /**
+   * Count pages by the explicit `<<<PAGE n>>>` markers injected in
+   * `runPdfToText`. Falls back to form-feed counting for any code path that
+   * still produces raw pdftotext output.
+   */
   private countPages(text: string): number {
     if (!text) return 0;
+    const markerCount = (text.match(/<<<PAGE \d+>>>/g) ?? []).length;
+    if (markerCount > 0) return markerCount;
     return text.split('\f').filter((page) => page.trim().length > 0).length || 1;
   }
 }

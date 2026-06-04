@@ -758,6 +758,19 @@ export class DocumentsService {
       .replace(/\(\s+(?=[\u0E00-\u0E7F\d])/g, '(')
       .replace(/([\u0E00-\u0E7F\d])\s+\)/g, '$1)')
       .replace(/[ \t]+/g, ' ')                   // collapse horizontal whitespace
+      // Drop standalone noise lines (1-3 chars with no structural punctuation).
+      // Mirrors the filter in TesseractAdapter.cleanOcrText so direct
+      // pdf-parse extraction stays consistent with the OCR path. Numbered
+      // items like "1.", "(1)", "[2]", "ก." all contain punctuation and are
+      // preserved; isolated junk like "A", "VY", "๑", "die" is removed.
+      .split('\n')
+      .filter((line) => {
+        const trimmed = line.trim();
+        if (trimmed.length === 0) return true;
+        if (trimmed.length > 3) return true;
+        return /[.()[\]{}:;\-–—]/.test(trimmed);
+      })
+      .join('\n')
       .replace(/\n{3,}/g, '\n\n')                // max two consecutive blank lines
       .trim();
   }
