@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 
 import { authTokenCookieName, normalizeNextPath, verifySessionToken } from '@/lib/auth';
 
-export async function middleware(request: NextRequest) {  const pathname = request.nextUrl.pathname;
+export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
   const isLoginPage = pathname === '/login';
   const isLogoutRoute = pathname === '/logout';
   const token = request.cookies.get(authTokenCookieName)?.value ?? null;
@@ -33,7 +34,11 @@ export async function middleware(request: NextRequest) {  const pathname = reque
   }
 
   const loginUrl = new URL('/login', request.nextUrl.origin);
-  loginUrl.searchParams.set('next', pathname === '/' ? '/dashboard' : `${pathname}${request.nextUrl.search}`);
+  // Never set /login itself (or /) as the next destination — it causes redirect loops.
+  const nextTarget = pathname === '/' || pathname === '/login'
+    ? '/dashboard'
+    : `${pathname}${request.nextUrl.search}`;
+  loginUrl.searchParams.set('next', nextTarget);
   const response = NextResponse.redirect(loginUrl);
   if (token) {
     response.cookies.delete(authTokenCookieName);

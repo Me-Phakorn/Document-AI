@@ -15,7 +15,10 @@ export function normalizeNextPath(value: string | null | undefined, fallback = '
   if (!value || !value.startsWith('/') || value.startsWith('//')) {
     return fallback;
   }
-
+  // Reject redirecting back to /login itself — avoids redirect loops.
+  if (value === '/login' || value.startsWith('/login?') || value.startsWith('/login/')) {
+    return fallback;
+  }
   return value;
 }
 
