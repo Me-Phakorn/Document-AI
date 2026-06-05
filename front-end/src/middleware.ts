@@ -3,12 +3,11 @@ import { NextResponse } from 'next/server';
 
 import { authTokenCookieName, normalizeNextPath, verifySessionToken } from '@/lib/auth';
 
-export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+export async function middleware(request: NextRequest) {  const pathname = request.nextUrl.pathname;
   const isLoginPage = pathname === '/login';
   const isLogoutRoute = pathname === '/logout';
   const token = request.cookies.get(authTokenCookieName)?.value ?? null;
-  const session = await verifySessionToken(token);
+  const session = verifySessionToken(token);
 
   if (isLogoutRoute) {
     return NextResponse.next();
