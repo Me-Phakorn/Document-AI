@@ -12,10 +12,16 @@ import {
 import { Client as MinioClient } from 'minio';
 import { PDFParse } from 'pdf-parse';
 import { createHash, randomUUID } from 'node:crypto';
+import { execFile } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { basename, resolve } from 'node:path';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { basename, join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { promisify } from 'node:util';
 import { extractBotFipcsPdfLinks, type BotFipcsDocumentLink } from '../bot-fipcs-parser';
+
+const execFileAsync = promisify(execFile);
 
 interface CrawlOptions {
   sourceId?: string;
@@ -231,12 +237,40 @@ async function importPdfLink(
   const ocrArtifactId = randomUUID();
   const originalObjectKey = `documents/${documentId}/versions/${documentVersionId}/original.pdf`;
   const textObjectKey = `ocr/${ocrArtifactId}/text/ocr.txt`;
-  const textBuffer = Buffer.from(normalizedText || '', 'utf8');
   const pageCount = extracted.pageCount;
-  // Image PDFs produce only degenerate page-marker text; mark them FAILED so the
-  // OCR pipeline can re-process them with real OCR (Tesseract/PaddleOCR) later.
-  const ocrStatus = isDegenerateText ? OcrStatus.FAILED : OcrStatus.COMPLETED;
-  const documentStatus = isDegenerateText ? DocumentStatus.OCR_FAILED : DocumentStatus.OCR_COMPLETED;
+
+  // For image-only / scanned PDFs (no native Thai text), run Tesseract OCR inline
+  // so documents are not permanently stuck at OCR_FAILED.
+  let finalText = normalizedText;
+  let ocrEngine = 'pdf-parse-native-text';
+  let ocrStatus: OcrStatus;
+  let documentStatus: DocumentStatus;
+
+  if (isDegenerateText) {
+    const languages = process.env.OCR_LANGUAGES ?? 'tha+eng';
+    const timeoutMs = Number(process.env.OCR_TIMEOUT_MS ?? '180000');
+    try {
+      console.log(`[OCR] Running Tesseract on ${link.pdfUrl}`);
+      const ocrResult = await runTesseractOcr(pdfBuffer, languages, timeoutMs);
+      finalText = normalizeText(ocrResult.text);
+      ocrStatus = ocrResult.ocrStatus;
+      ocrEngine = `ocrmypdf-tesseract@${languages}`;
+      console.log(`[OCR] Tesseract done: status=${ocrStatus} textLen=${finalText.length}`);
+    } catch (err) {
+      console.warn(`[OCR] Tesseract failed for ${link.pdfUrl}:`, err instanceof Error ? err.message : String(err));
+      ocrStatus = OcrStatus.FAILED;
+    }
+  } else {
+    ocrStatus = OcrStatus.COMPLETED;
+  }
+
+  documentStatus = ocrStatus === OcrStatus.COMPLETED
+    ? DocumentStatus.OCR_COMPLETED
+    : ocrStatus === OcrStatus.PARTIAL
+    ? DocumentStatus.OCR_PARTIAL
+    : DocumentStatus.OCR_FAILED;
+
+  const textBuffer = Buffer.from(finalText || '', 'utf8');
 
   await minio.putObject(buckets.documents, originalObjectKey, pdfBuffer, pdfBuffer.byteLength, {
     'Content-Type': 'application/pdf',
@@ -336,13 +370,13 @@ async function importPdfLink(
       data: {
         id: ocrArtifactId,
         documentVersionId,
-        engine: 'pdf-parse-native-text',
+        engine: ocrEngine,
         status: ocrStatus,
-        aggregateConfidence: normalizedText ? estimateTextQuality(normalizedText) : 0,
-        minPageConfidence: normalizedText ? estimateTextQuality(normalizedText) : 0,
+        aggregateConfidence: finalText ? estimateTextQuality(finalText) : 0,
+        minPageConfidence: finalText ? estimateTextQuality(finalText) : 0,
         pageCount,
-        failedPages: normalizedText ? [] : Array.from({ length: pageCount }, (_, index) => index + 1),
-        warnings: normalizedText ? [] : ['No extractable text found; OCR engine required for scanned PDF.'],
+        failedPages: finalText ? [] : Array.from({ length: pageCount }, (_, index) => index + 1),
+        warnings: finalText ? [] : ['No extractable text found; image PDF could not be OCR\'d.'],
         textObjectId: textObject.id,
       },
     });
@@ -733,6 +767,82 @@ function decodeHtml(value: string) {
 
 function normalizeText(value: string) {
   return value.replace(/\u0000/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/**
+ * Run Tesseract OCR (via ocrmypdf) on a PDF buffer.
+ * Mirrors TesseractAdapter logic without requiring the NestJS DI container.
+ * Returns the extracted text and the resulting OcrStatus.
+ */
+async function runTesseractOcr(
+  pdfBuffer: Buffer,
+  languages: string,
+  timeoutMs: number,
+): Promise<{ text: string; ocrStatus: OcrStatus }> {
+  const tmpDir = await mkdtemp(join(tmpdir(), 'docai-ocr-'));
+  const inputPath = join(tmpDir, 'input.pdf');
+  const outputPath = join(tmpDir, 'output.pdf');
+
+  async function pdfToText(filePath: string): Promise<string> {
+    try {
+      const { stdout } = await execFileAsync(
+        'pdftotext',
+        ['-enc', 'UTF-8', filePath, '-'],
+        { timeout: 30_000, encoding: 'utf8', maxBuffer: 50 * 1024 * 1024 },
+      );
+      return stdout.replace(/\f/g, '\n').replace(/\u0000/g, '').replace(/[\uFFFD\u00AD]/g, '').normalize('NFC').trim();
+    } catch {
+      return '';
+    }
+  }
+
+  try {
+    await writeFile(inputPath, pdfBuffer);
+
+    // Pre-scan: if the PDF already has readable Thai text, skip full OCR.
+    const preScan = await pdfToText(inputPath);
+    const thaiRatio = (preScan.match(/[ก-๙]/g) ?? []).length / Math.max(preScan.length, 1);
+    if (thaiRatio >= 0.3 && preScan.trim()) {
+      return { text: preScan, ocrStatus: OcrStatus.COMPLETED };
+    }
+
+    // Full visual OCR — force-ocr ignores any garbled embedded text layer.
+    await execFileAsync(
+      'ocrmypdf',
+      [
+        '--language', languages,
+        '--output-type', 'pdf',
+        '--force-ocr',
+        '--rotate-pages',
+        '--deskew',
+        '--clean',
+        '--optimize', '1',
+        '--image-dpi', '300',
+        inputPath,
+        outputPath,
+      ],
+      { timeout: timeoutMs },
+    );
+
+    const ocrText = await pdfToText(outputPath);
+    if (ocrText.trim()) {
+      return { text: ocrText, ocrStatus: OcrStatus.COMPLETED };
+    }
+    // ocrmypdf succeeded but pdftotext found nothing; fall back to pre-scan.
+    if (preScan.trim()) {
+      return { text: preScan, ocrStatus: OcrStatus.PARTIAL };
+    }
+    return { text: '', ocrStatus: OcrStatus.FAILED };
+  } catch {
+    // ocrmypdf failed — fall back to whatever pdftotext got from the original.
+    const fallback = await pdfToText(inputPath).catch(() => '');
+    if (fallback.trim()) {
+      return { text: fallback, ocrStatus: OcrStatus.PARTIAL };
+    }
+    return { text: '', ocrStatus: OcrStatus.FAILED };
+  } finally {
+    await rm(tmpDir, { recursive: true, force: true }).catch(() => undefined);
+  }
 }
 
 function estimateTextQuality(text: string) {
