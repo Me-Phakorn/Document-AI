@@ -1,7 +1,8 @@
 'use client';
 
-import { Archive, BookOpen, CheckCircle2, Clock, FileText, X, XCircle } from 'lucide-react';
+import { Archive, BookOpen, CheckCircle2, Clock, FileText, Loader2, X, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import type { ReviewItemRecord } from '@/lib/api/review';
 import { formatDateTime } from '@/lib/format';
 import { OutcomeBadge } from './outcome-badge';
@@ -64,6 +65,20 @@ function RuleCard({ rule, index }: { rule: unknown; index: number }) {
 
 
 const SECTION_LIMIT = 5;
+
+function SubmitButton({ icon, label, variant }: { icon: React.ReactNode; label: string; variant: 'accent' | 'outline' }) {
+  const { pending } = useFormStatus();
+  const base = 'inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-60';
+  const cls = variant === 'accent'
+    ? `${base} bg-accent text-white hover:brightness-110 shadow-sm`
+    : `${base} border border-border text-t2 hover:bg-raised hover:text-t1`;
+  return (
+    <button type="submit" disabled={pending} className={cls}>
+      {pending ? <Loader2 size={14} className="animate-spin" /> : icon}
+      {label}
+    </button>
+  );
+}
 
 interface Props {
   items: ReviewItemRecord[];
@@ -157,26 +172,17 @@ export function ReviewPendingSection({ items, onApprove, onRequestChanges, onCon
                   {item.reviewType === 'NOT_RELEVANT' ? (
                     <form action={onConfirmNotRelevant}>
                       <input type="hidden" name="reviewItemId" value={item.id} />
-                      <button className="inline-flex items-center gap-2 rounded-md bg-accent px-3 py-2 text-sm font-medium text-white">
-                        <Archive size={14} />
-                        Confirm Not Relevant
-                      </button>
+                      <SubmitButton icon={<Archive size={14} />} label="Confirm Not Relevant" variant="accent" />
                     </form>
                   ) : (
                     <form action={onApprove}>
                       <input type="hidden" name="reviewItemId" value={item.id} />
-                      <button className="inline-flex items-center gap-2 rounded-md bg-accent px-3 py-2 text-sm font-medium text-white">
-                        <CheckCircle2 size={14} />
-                        Approve
-                      </button>
+                      <SubmitButton icon={<CheckCircle2 size={14} />} label="Approve" variant="accent" />
                     </form>
                   )}
                   <form id={`rc-${item.id}`} action={onRequestChanges}>
                     <input type="hidden" name="reviewItemId" value={item.id} />
-                    <button className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-t2">
-                      <XCircle size={14} />
-                      Request Changes
-                    </button>
+                    <SubmitButton icon={<XCircle size={14} />} label="Request Changes" variant="outline" />
                   </form>
                 </div>
               </div>

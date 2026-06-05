@@ -1,4 +1,4 @@
-import { Globe2, Play, Radar, UploadCloud } from 'lucide-react';
+import { Globe2, Loader2, Play, Radar, UploadCloud } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 import { PageHeader } from '@/components/page-header';
 import { uploadDocument } from '@/lib/api/documents';
@@ -8,6 +8,7 @@ import { formatDateTime } from '@/lib/format';
 import { importSelectedAction, previewSourceAction } from './actions';
 import { ImportAutoRefresh } from './import-auto-refresh';
 import { CrawlerPreviewPanel } from './crawler-preview-panel';
+import { SubmitBtn } from './submit-btn';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,7 +108,7 @@ export default async function ImportPage() {
               <span className="text-xs font-medium uppercase tracking-wide text-t3">Title</span>
               <input name="title" placeholder="Use file name if blank" className="rounded-md border border-border bg-raised px-3 py-2 text-sm text-t1" />
             </label>
-            <button className="inline-flex w-fit items-center gap-2 rounded-md bg-accent px-3 py-2 text-sm font-medium text-white"><UploadCloud size={15} />Upload PDF</button>
+            <SubmitBtn icon={<UploadCloud size={15} />} label="Upload PDF" />
           </form>
         </section>
 
@@ -141,7 +142,7 @@ export default async function ImportPage() {
                 <input name="maxDocuments" type="number" min="1" max="500" className="rounded-md border border-border bg-raised px-3 py-2 text-sm text-t1" />
               </label>
             </div>
-            <button className="inline-flex w-fit items-center gap-2 rounded-md bg-accent px-3 py-2 text-sm font-medium text-white"><Radar size={15} />Save URL source</button>
+            <SubmitBtn icon={<Radar size={15} />} label="Save URL source" />
           </form>
         </section>
       </div>
@@ -219,7 +220,7 @@ export default async function ImportPage() {
                     onPreview={previewSourceAction.bind(null, source.id)}
                     onImport={importSelectedAction.bind(null, source.id)}
                   />
-                  <button className="inline-flex items-center gap-2 rounded-md border border-border bg-raised px-3 py-2 text-sm font-medium text-t2"><Play size={14} />Run Scan</button>
+                  <button className="inline-flex items-center gap-2 rounded-md border border-border bg-raised px-3 py-2 text-sm font-medium text-t2 hover:bg-white hover:text-t1"><Play size={14} />Run Scan</button>
                 </div>
               </form>
             </article>

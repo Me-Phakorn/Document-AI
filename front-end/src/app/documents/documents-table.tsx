@@ -88,12 +88,17 @@ export function DocumentsTable({ items }: Props) {
         <div className="flex items-center gap-3 border-b border-border bg-accent/5 px-4 py-2 text-sm">
           <span className="font-medium text-t1">{selected.size} รายการที่เลือก</span>
           <button
-            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isPending}
             onClick={handleSubmit}
             type="button"
           >
-            {isPending ? 'กำลังส่ง…' : 'เพิ่มเข้าคิว Review'}
+            {isPending ? (
+              <>
+                <span className="spinner" style={{ width: 12, height: 12, borderWidth: 1.5 }} />
+                กำลังส่ง…
+              </>
+            ) : 'เพิ่มเข้าคิว Review'}
           </button>
           <button
             className="text-xs text-t3 hover:text-t1"
