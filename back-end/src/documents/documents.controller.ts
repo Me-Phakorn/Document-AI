@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { RegisterDocumentDto } from './dto/register-document.dto';
 import { DocumentsListQueryDto } from './dto/documents-list-query.dto';
+import { UpdateOcrTextDto } from './dto/update-ocr-text.dto';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 import { DocumentsService } from './documents.service';
 
@@ -122,11 +123,11 @@ export class DocumentsController {
   @ApiOkResponse({ description: 'OCR text updated and status set to MANUAL_EDIT.' })
   updateOcrText(
     @Param('documentVersionId') documentVersionId: string,
-    @Body() body: { text: string },
+    @Body() dto: UpdateOcrTextDto,
     @CurrentUser('id') actorId: string,
     @Query('correlationId') correlationId: string | undefined,
   ) {
-    return this.documentsService.updateOcrText(documentVersionId, body.text, {
+    return this.documentsService.updateOcrText(documentVersionId, dto.text, {
       actorId,
       correlationId: correlationId ?? randomUUID(),
     });

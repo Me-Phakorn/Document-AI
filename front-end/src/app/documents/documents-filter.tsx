@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown, EyeOff, Search, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { WorkflowStatus } from '@/lib/types';
 
@@ -12,6 +12,7 @@ const STATUS_OPTIONS: { value: WorkflowStatus | ''; label: string }[] = [
   { value: 'OCR_COMPLETED', label: 'OCR Completed' },
   { value: 'OCR_PARTIAL', label: 'OCR Partial' },
   { value: 'OCR_FAILED', label: 'OCR Failed' },
+  { value: 'MANUAL_EDIT' as WorkflowStatus, label: 'Manual Edit' },
   { value: 'AI_PENDING', label: 'AI Pending' },
   { value: 'AI_PROCESSING', label: 'AI Processing' },
   { value: 'AI_COMPLETED', label: 'AI Completed' },
@@ -31,6 +32,7 @@ interface Props {
 
 export function DocumentsFilter({ currentSearch, currentStatus, currentIgnore }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
   const [search, setSearch] = useState(currentSearch);
   const [status, setStatus] = useState(currentStatus);
@@ -65,6 +67,9 @@ export function DocumentsFilter({ currentSearch, currentStatus, currentIgnore }:
     if (nextStatus) qs.set('status', nextStatus);
     const ignoreStr = [...nextIgnored].join(',');
     if (ignoreStr) qs.set('ignore', ignoreStr);
+    // Preserve the active source tab
+    const currentSource = searchParams.get('source');
+    if (currentSource) qs.set('source', currentSource);
     startTransition(() => {
       router.push(`?${qs}`);
     });
