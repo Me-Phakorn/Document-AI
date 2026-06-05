@@ -315,11 +315,28 @@ export class AnalysisService {
   }
 
   private async ensureDefaultPromptTemplateVersion(actorId?: string) {
-    const existing = await this.prisma.promptTemplateVersion.findFirst({
+    // First check: is there already an active version of this template?
+    const activeExisting = await this.prisma.promptTemplateVersion.findFirst({
       where: { promptTemplate: { name: 'Default Regulatory Rule Extraction' }, status: PromptStatus.ACTIVE },
       orderBy: { createdAt: 'desc' },
     });
-    if (existing) return existing;
+    if (activeExisting) return activeExisting;
+
+    // Second check: does a template with this name exist at all (any status)?
+    // This prevents concurrent analysis jobs from each creating a new duplicate template.
+    const existingTemplate = await this.prisma.promptTemplate.findFirst({
+      where: { name: 'Default Regulatory Rule Extraction' },
+      include: { versions: { orderBy: { versionNumber: 'desc' }, take: 1 } },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (existingTemplate?.versions[0]) {
+      const latestVersion = existingTemplate.versions[0];
+      await this.prisma.$transaction([
+        this.prisma.promptTemplateVersion.update({ where: { id: latestVersion.id }, data: { status: PromptStatus.ACTIVE } }),
+        this.prisma.promptTemplate.update({ where: { id: existingTemplate.id }, data: { status: PromptStatus.ACTIVE } }),
+      ]);
+      return latestVersion;
+    }
 
     const promptTemplate = await this.prisma.promptTemplate.create({
       data: {

@@ -112,7 +112,10 @@ export class PromptsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      await tx.promptTemplateVersion.updateMany({ where: { promptTemplateId: version.promptTemplateId, status: PromptStatus.ACTIVE }, data: { status: PromptStatus.DEPRECATED } });
+      // Deactivate ALL active versions across all templates — only one version may be active system-wide.
+      await tx.promptTemplateVersion.updateMany({ where: { status: PromptStatus.ACTIVE }, data: { status: PromptStatus.DEPRECATED } });
+      // Set all other templates that were ACTIVE back to DRAFT.
+      await tx.promptTemplate.updateMany({ where: { status: PromptStatus.ACTIVE, id: { not: version.promptTemplateId } }, data: { status: PromptStatus.DRAFT } });
       const activated = await tx.promptTemplateVersion.update({ where: { id: promptTemplateVersionId }, data: { status: PromptStatus.ACTIVE } });
       await tx.promptTemplate.update({ where: { id: version.promptTemplateId }, data: { status: PromptStatus.ACTIVE } });
       await this.audit.record({
