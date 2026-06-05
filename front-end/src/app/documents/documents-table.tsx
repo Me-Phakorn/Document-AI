@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckSquare2, ExternalLink, Link as LinkIcon, Pencil, Square, UploadCloud, Zap } from 'lucide-react';
+import { CheckSquare2, ExternalLink, Link as LinkIcon, Loader2, Pencil, Square, UploadCloud, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useTransition } from 'react';
 import { StatusBadge } from '@/components/status-badge';
@@ -95,7 +95,7 @@ export function DocumentsTable({ items }: Props) {
           >
             {isPending ? (
               <>
-                <span className="spinner" style={{ width: 12, height: 12, borderWidth: 1.5 }} />
+                <Loader2 size={12} className="animate-spin" />
                 กำลังส่ง…
               </>
             ) : 'เพิ่มเข้าคิว Review'}

@@ -46,45 +46,36 @@ export function AppShell({ children, currentUser }: { children: React.ReactNode;
 
   return (
     <div className="min-h-screen bg-bg text-t1">
-      <header className="sticky top-0 z-20 flex h-12 items-center border-b border-border bg-panel/95 px-4 backdrop-blur-sm">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-t1 transition-opacity hover:opacity-80" aria-label="DocAI dashboard">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-white shadow-sm">
+      <header className="sticky top-0 z-20 flex h-12 items-center border-b border-border bg-panel px-4">
+        <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-t1" aria-label="DocAI dashboard">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-white">
             <FileText size={15} aria-hidden="true" />
           </span>
           DocAI
         </Link>
-        <div className="ml-8 hidden items-center gap-0.5 lg:flex">
+        <div className="ml-8 hidden items-center gap-1 lg:flex">
           {navItems.slice(0, 7).map((item) => {
             const active = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
-                  active
-                    ? 'bg-[var(--accent-lo)] text-accent'
-                    : 'text-t2 hover:bg-raised hover:text-t1'
+                className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                  active ? 'bg-[var(--accent-lo)] text-accent' : 'text-t2 hover:bg-raised hover:text-t1'
                 }`}
               >
                 {item.label}
-                {active && (
-                  <span className="absolute bottom-0 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-accent" />
-                )}
               </Link>
             );
           })}
         </div>
         <div className="ml-auto flex min-w-0 items-center gap-3">
-          <Link
-            href="/logout"
-            prefetch={false}
-            className="rounded-md border border-border bg-raised px-3 py-1.5 text-sm text-t2 hover:border-ghost hover:bg-white hover:text-t1"
-          >
+          <Link href="/logout" prefetch={false} className="rounded-md border border-border bg-raised px-3 py-1.5 text-sm text-t2 hover:bg-white hover:text-t1">
             Log out
           </Link>
           <div
-            title={currentUser ? `${currentUser.username} · ${currentUser.role}` : undefined}
-            className="flex h-8 min-w-8 cursor-default items-center justify-center rounded-full bg-accent px-2 text-xs font-bold text-white shadow-sm ring-2 ring-white"
+            title={currentUser ? `${currentUser.username} (${currentUser.role})` : undefined}
+            className="flex h-8 min-w-8 items-center justify-center rounded-full bg-accent px-2 text-xs font-bold text-white"
           >
             {initials}
           </div>
@@ -93,7 +84,7 @@ export function AppShell({ children, currentUser }: { children: React.ReactNode;
 
       <div className="grid min-h-[calc(100vh-3rem)] grid-cols-[56px_1fr]">
         <nav className="border-r border-border bg-panel py-3" aria-label="Workspace navigation">
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="flex flex-col items-center gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = pathname.startsWith(item.href);
@@ -102,17 +93,12 @@ export function AppShell({ children, currentUser }: { children: React.ReactNode;
                   key={item.href}
                   href={item.href}
                   title={item.label}
-                  className={`relative flex h-9 w-9 items-center justify-center rounded-lg transition-all ${
-                    active
-                      ? 'bg-[var(--accent-lo)] text-accent shadow-sm'
-                      : 'text-t3 hover:bg-raised hover:text-t1'
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                    active ? 'bg-[var(--accent-lo)] text-accent' : 'text-t2 hover:bg-raised hover:text-t1'
                   }`}
                 >
                   <Icon size={17} aria-hidden="true" />
                   <span className="sr-only">{item.label}</span>
-                  {active && (
-                    <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-accent" />
-                  )}
                 </Link>
               );
             })}
