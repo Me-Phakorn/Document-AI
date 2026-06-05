@@ -6,7 +6,7 @@ FROM node:22-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
   python3 make g++ \
   tesseract-ocr tesseract-ocr-tha tesseract-ocr-eng \
-  poppler-utils ghostscript ocrmypdf unpaper \
+  poppler-utils ghostscript ocrmypdf \
   && rm -rf /var/lib/apt/lists/*
 
 # Enable corepack / pnpm
@@ -17,9 +17,11 @@ WORKDIR /app
 # ── Workspace manifests (layer-cached until deps change) ─────────────────────
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY back-end/package.json  ./back-end/
+# pnpm workspace requires all package.json stubs to be present
+COPY front-end/package.json ./front-end/
 
 # Install only back-end workspace dependencies
-RUN pnpm install --filter @docai/back-end --no-frozen-lockfile
+RUN pnpm install --filter @docai/back-end --frozen-lockfile
 
 # ── Application source ───────────────────────────────────────────────────────
 COPY back-end/ ./back-end/
