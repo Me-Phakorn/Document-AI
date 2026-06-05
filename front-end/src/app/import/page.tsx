@@ -1,4 +1,4 @@
-import { Globe2, Loader2, Play, Radar, UploadCloud } from 'lucide-react';
+import { Globe2, Loader2, Radar, UploadCloud } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 import { PageHeader } from '@/components/page-header';
 import { uploadDocument } from '@/lib/api/documents';
@@ -8,6 +8,7 @@ import { formatDateTime } from '@/lib/format';
 import { importSelectedAction, previewSourceAction } from './actions';
 import { ImportAutoRefresh } from './import-auto-refresh';
 import { CrawlerPreviewPanel } from './crawler-preview-panel';
+import { RunScanButton } from './run-scan-button';
 import { SubmitBtn } from './submit-btn';
 
 export const dynamic = 'force-dynamic';
@@ -220,7 +221,7 @@ export default async function ImportPage() {
                     onPreview={previewSourceAction.bind(null, source.id)}
                     onImport={importSelectedAction.bind(null, source.id)}
                   />
-                  <button className="inline-flex items-center gap-2 rounded-md border border-border bg-raised px-3 py-2 text-sm font-medium text-t2 hover:bg-white hover:text-t1"><Play size={14} />Run Scan</button>
+                  <RunScanButton />
                 </div>
               </form>
             </article>
