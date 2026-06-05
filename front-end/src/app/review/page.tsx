@@ -15,7 +15,12 @@ async function approveReviewAction(formData: FormData) {
   'use server';
   const reviewItemId = formData.get('reviewItemId')?.toString();
   if (!reviewItemId) return;
-  await approveReviewItem(reviewItemId, formData.get('comment')?.toString() || undefined);
+  try {
+    await approveReviewItem(reviewItemId, formData.get('comment')?.toString() || undefined);
+  } catch (error) {
+    console.error('[review] approve failed', reviewItemId, error);
+    return;
+  }
   revalidateReviewPaths();
 }
 
@@ -24,7 +29,12 @@ async function requestChangesAction(formData: FormData) {
   const reviewItemId = formData.get('reviewItemId')?.toString();
   const comment = formData.get('comment')?.toString().trim();
   if (!reviewItemId || !comment) return;
-  await requestReviewChanges(reviewItemId, comment);
+  try {
+    await requestReviewChanges(reviewItemId, comment);
+  } catch (error) {
+    console.error('[review] request-changes failed', reviewItemId, error);
+    return;
+  }
   revalidateReviewPaths();
 }
 
@@ -32,7 +42,12 @@ async function confirmNotRelevantAction(formData: FormData) {
   'use server';
   const reviewItemId = formData.get('reviewItemId')?.toString();
   if (!reviewItemId) return;
-  await confirmReviewNotRelevant(reviewItemId, formData.get('comment')?.toString() || undefined);
+  try {
+    await confirmReviewNotRelevant(reviewItemId, formData.get('comment')?.toString() || undefined);
+  } catch (error) {
+    console.error('[review] confirm-not-relevant failed', reviewItemId, error);
+    return;
+  }
   revalidateReviewPaths();
 }
 
@@ -40,7 +55,12 @@ async function reReviewAction(formData: FormData) {
   'use server';
   const reviewItemId = formData.get('reviewItemId')?.toString();
   if (!reviewItemId) return;
-  await reReviewItem(reviewItemId);
+  try {
+    await reReviewItem(reviewItemId);
+  } catch (error) {
+    console.error('[review] re-review failed', reviewItemId, error);
+    return;
+  }
   revalidateReviewPaths();
 }
 

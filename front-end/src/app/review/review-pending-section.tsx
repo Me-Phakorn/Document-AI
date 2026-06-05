@@ -169,7 +169,7 @@ export function ReviewPendingSection({ items, onApprove, onRequestChanges, onCon
                   className="min-h-[4rem] flex-1 rounded-md border border-border bg-raised px-3 py-2 text-sm text-t1"
                 />
                 <div className="flex flex-wrap gap-2">
-                  {item.reviewType === 'NOT_RELEVANT' ? (
+                  {item.reviewType === 'NOT_RELEVANT' || aiResult?.outcome === 'NO_RULES_FOUND' ? (
                     <form action={onConfirmNotRelevant}>
                       <input type="hidden" name="reviewItemId" value={item.id} />
                       <SubmitButton icon={<Archive size={14} />} label="Confirm Not Relevant" variant="accent" />
