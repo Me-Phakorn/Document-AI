@@ -16,7 +16,9 @@ export async function middleware(request: NextRequest) {
 
   if (isLoginPage) {
     if (session) {
-      const destination = new URL(normalizeNextPath(request.nextUrl.searchParams.get('next')), request.url);
+      // Use request.nextUrl.origin (respects X-Forwarded-Host from Traefik) instead of
+      // request.url which may be the internal Docker hostname (e.g. http://localhost:3000).
+      const destination = new URL(normalizeNextPath(request.nextUrl.searchParams.get('next')), request.nextUrl.origin);
       return NextResponse.redirect(destination);
     }
 
@@ -31,7 +33,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const loginUrl = new URL('/login', request.url);
+  const loginUrl = new URL('/login', request.nextUrl.origin);
   loginUrl.searchParams.set('next', pathname === '/' ? '/dashboard' : `${pathname}${request.nextUrl.search}`);
   const response = NextResponse.redirect(loginUrl);
   if (token) {
