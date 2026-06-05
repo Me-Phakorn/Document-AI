@@ -55,6 +55,11 @@ export function listPromptTemplates(params: { limit?: number; offset?: number } 
   return apiGet<PromptTemplateListResponse>(`/prompts?limit=${limit}&offset=${offset}`);
 }
 
+export async function getActivePromptTemplate(): Promise<PromptTemplateRecord | null> {
+  const res = await listPromptTemplates({ limit: 100 });
+  return res.items.find((t) => t.status === 'ACTIVE') ?? null;
+}
+
 export function createPromptTemplate(input: CreatePromptTemplateRequest) {
   return apiPost<PromptTemplateRecord>('/prompts', input);
 }

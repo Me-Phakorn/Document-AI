@@ -1,6 +1,6 @@
 'use client';
 
-import { Archive, BookOpen, CheckCircle2, Clock, FileText, Loader2, X, XCircle } from 'lucide-react';
+import { Archive, AlertTriangle, BookOpen, CheckCircle2, Clock, FileText, Loader2, X, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { ReviewItemRecord } from '@/lib/api/review';
@@ -66,14 +66,14 @@ function RuleCard({ rule, index }: { rule: unknown; index: number }) {
 
 const SECTION_LIMIT = 5;
 
-function SubmitButton({ icon, label, variant }: { icon: React.ReactNode; label: string; variant: 'accent' | 'outline' }) {
+function SubmitButton({ icon, label, variant, disabled: externalDisabled }: { icon: React.ReactNode; label: string; variant: 'accent' | 'outline'; disabled?: boolean }) {
   const { pending } = useFormStatus();
   const base = 'inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-60';
   const cls = variant === 'accent'
     ? `${base} bg-accent text-white hover:brightness-110 shadow-sm`
     : `${base} border border-border text-t2 hover:bg-raised hover:text-t1`;
   return (
-    <button type="submit" disabled={pending} className={cls}>
+    <button type="submit" disabled={pending || externalDisabled} className={cls}>
       {pending ? <Loader2 size={14} className="animate-spin" /> : icon}
       {label}
     </button>
@@ -82,12 +82,13 @@ function SubmitButton({ icon, label, variant }: { icon: React.ReactNode; label: 
 
 interface Props {
   items: ReviewItemRecord[];
+  hasActiveTemplate: boolean;
   onApprove: (formData: FormData) => Promise<void>;
   onRequestChanges: (formData: FormData) => Promise<void>;
   onConfirmNotRelevant: (formData: FormData) => Promise<void>;
 }
 
-export function ReviewPendingSection({ items, onApprove, onRequestChanges, onConfirmNotRelevant }: Props) {
+export function ReviewPendingSection({ items, hasActiveTemplate, onApprove, onRequestChanges, onConfirmNotRelevant }: Props) {
   const [page, setPage] = useState(1);
   const [rulesModal, setRulesModal] = useState<RulesModal | null>(null);
 
@@ -108,6 +109,20 @@ export function ReviewPendingSection({ items, onApprove, onRequestChanges, onCon
         </div>
         <p className="mt-0.5 text-xs text-t3">เอกสารที่ AI วิเคราะห์แล้ว รอการตัดสินใจจาก Reviewer</p>
       </div>
+
+      {!hasActiveTemplate && (
+        <div className="flex items-start gap-3 border-b border-amber/30 bg-amber/10 px-5 py-3">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-medium text-amber">ไม่มี Prompt Template ที่ Activate อยู่</p>
+            <p className="mt-0.5 text-xs text-t2">
+              กรุณาไปที่{' '}
+              <a href="/prompts" className="underline hover:text-t1">Prompt Library</a>{' '}
+              และ Activate template version ก่อน จึงจะสามารถทำ Review ได้
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="divide-y divide-border">
         {slice.map((item) => {
@@ -166,23 +181,24 @@ export function ReviewPendingSection({ items, onApprove, onRequestChanges, onCon
                   form={`rc-${item.id}`}
                   name="comment"
                   placeholder="Reviewer comment (จำเป็นสำหรับ Request Changes)"
-                  className="min-h-[4rem] flex-1 rounded-md border border-border bg-raised px-3 py-2 text-sm text-t1"
+                  disabled={!hasActiveTemplate}
+                  className="min-h-[4rem] flex-1 rounded-md border border-border bg-raised px-3 py-2 text-sm text-t1 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <div className="flex flex-wrap gap-2">
                   {item.reviewType === 'NOT_RELEVANT' || aiResult?.outcome === 'NO_RULES_FOUND' ? (
                     <form action={onConfirmNotRelevant}>
                       <input type="hidden" name="reviewItemId" value={item.id} />
-                      <SubmitButton icon={<Archive size={14} />} label="Confirm Not Relevant" variant="accent" />
+                      <SubmitButton icon={<Archive size={14} />} label="Confirm Not Relevant" variant="accent" disabled={!hasActiveTemplate} />
                     </form>
                   ) : (
                     <form action={onApprove}>
                       <input type="hidden" name="reviewItemId" value={item.id} />
-                      <SubmitButton icon={<CheckCircle2 size={14} />} label="Approve" variant="accent" />
+                      <SubmitButton icon={<CheckCircle2 size={14} />} label="Approve" variant="accent" disabled={!hasActiveTemplate} />
                     </form>
                   )}
                   <form id={`rc-${item.id}`} action={onRequestChanges}>
                     <input type="hidden" name="reviewItemId" value={item.id} />
-                    <SubmitButton icon={<XCircle size={14} />} label="Request Changes" variant="outline" />
+                    <SubmitButton icon={<XCircle size={14} />} label="Request Changes" variant="outline" disabled={!hasActiveTemplate} />
                   </form>
                 </div>
               </div>

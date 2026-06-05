@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { PageHeader } from '@/components/page-header';
 import { apiBaseUrl } from '@/lib/api-client';
 import { approveReviewItem, confirmReviewNotRelevant, listReviewItems, reReviewItem, requestReviewChanges } from '@/lib/api/review';
+import { getActivePromptTemplate } from '@/lib/api/prompts';
 import { AutoRefresh } from './auto-refresh';
 import { ReviewApprovedSection } from './review-approved-section';
 import { ReviewPendingSection } from './review-pending-section';
@@ -79,6 +80,10 @@ export default async function ReviewPage() {
     console.error('[review] failed to load review items', error);
     return <ReviewError error={error} />;
   }
+
+  const activeTemplate = await getActivePromptTemplate().catch(() => null);
+  const hasActiveTemplate = activeTemplate !== null;
+
   const all = reviewItems.items;
 
   // Section 1 — รอ Review
@@ -179,6 +184,7 @@ export default async function ReviewPage() {
       <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
         <ReviewPendingSection
           items={pending}
+          hasActiveTemplate={hasActiveTemplate}
           onApprove={approveReviewAction}
           onRequestChanges={requestChangesAction}
           onConfirmNotRelevant={confirmNotRelevantAction}

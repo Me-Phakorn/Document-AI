@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import {
   AiAnalysisOutcome,
   AiAnalysisStatus,
@@ -301,7 +301,7 @@ export class AnalysisService {
     return { items: items.map((item) => this.serializeAiResult(item)), total, limit: safeLimit, offset: safeOffset };
   }
 
-  private async getActivePromptTemplateVersion(actorId?: string) {
+  private async getActivePromptTemplateVersion(_actorId?: string) {
     const activeVersions = await this.prisma.promptTemplateVersion.findMany({
       where: { status: PromptStatus.ACTIVE },
       include: { promptTemplate: true },
@@ -311,56 +311,10 @@ export class AnalysisService {
       return activeVersions.sort((left, right) => right.promptTemplate.updatedAt.getTime() - left.promptTemplate.updatedAt.getTime())[0];
     }
 
-    return this.ensureDefaultPromptTemplateVersion(actorId);
-  }
-
-  private async ensureDefaultPromptTemplateVersion(actorId?: string) {
-    // First check: is there already an active version of this template?
-    const activeExisting = await this.prisma.promptTemplateVersion.findFirst({
-      where: { promptTemplate: { name: 'Default Regulatory Rule Extraction' }, status: PromptStatus.ACTIVE },
-      orderBy: { createdAt: 'desc' },
+    throw new BadRequestException({
+      code: 'NO_ACTIVE_PROMPT_TEMPLATE',
+      message: 'No active prompt template is configured. Please activate a prompt template version in the Prompt Library before running analysis.',
     });
-    if (activeExisting) return activeExisting;
-
-    // Second check: does a template with this name exist at all (any status)?
-    // This prevents concurrent analysis jobs from each creating a new duplicate template.
-    const existingTemplate = await this.prisma.promptTemplate.findFirst({
-      where: { name: 'Default Regulatory Rule Extraction' },
-      include: { versions: { orderBy: { versionNumber: 'desc' }, take: 1 } },
-      orderBy: { createdAt: 'asc' },
-    });
-    if (existingTemplate?.versions[0]) {
-      const latestVersion = existingTemplate.versions[0];
-      await this.prisma.$transaction([
-        this.prisma.promptTemplateVersion.update({ where: { id: latestVersion.id }, data: { status: PromptStatus.ACTIVE } }),
-        this.prisma.promptTemplate.update({ where: { id: existingTemplate.id }, data: { status: PromptStatus.ACTIVE } }),
-      ]);
-      return latestVersion;
-    }
-
-    const promptTemplate = await this.prisma.promptTemplate.create({
-      data: {
-        name: 'Default Regulatory Rule Extraction',
-        domain: 'general-compliance',
-        tags: ['rule-extraction', 'thai-regulation'],
-        status: PromptStatus.ACTIVE,
-        createdById: actorId,
-        versions: {
-          create: {
-            versionNumber: 1,
-            status: PromptStatus.ACTIVE,
-            createdById: actorId,
-            variables: ['documentTitle', 'ocrText'],
-            aiProvider: this.aiConfig.provider,
-            aiModel: this.aiConfig.model,
-            templateText: 'Document title: {{documentTitle}}\n\nExtract compliance rules, prohibitions, conditions, citations, and risk levels from this source document. If the document is not relevant to compliance rule extraction, return outcome NOT_RELEVANT and explain why. Use this JSON shape exactly: {"outcome":"RULES_FOUND|NO_RULES_FOUND|NOT_RELEVANT","summary":"...","confidence":0.0,"rules":[{"ruleCode":"R-001","title":"...","description":"...","condition":"...","prohibition":"...","riskLevel":"HIGH|MEDIUM|LOW|INFO","sourceReferences":[{"page":1,"quote":"..."}]}],"notRelevantReason":"..."}.\n\nOCR text:\n{{ocrText}}',
-          },
-        },
-      },
-      include: { versions: true },
-    });
-
-    return promptTemplate.versions[0];
   }
 
   private renderPromptTemplate(templateText: string, title: string, ocrText: string) {
