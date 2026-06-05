@@ -72,6 +72,32 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+  const response = await fetch(buildApiUrl(path), {
+    method: 'PATCH',
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(await getAuthHeaders()),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = undefined;
+    }
+
+    throw new ApiClientError(`API request failed: ${response.status}`, response.status, payload);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const cookieStore = await cookies();
   const token = cookieStore.get(authTokenCookieName)?.value;

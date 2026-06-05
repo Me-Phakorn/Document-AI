@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'node:crypto';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -111,6 +111,22 @@ export class DocumentsController {
     @Query('correlationId') correlationId: string | undefined,
   ) {
     return this.documentsService.retriggerOcr(documentVersionId, {
+      actorId,
+      correlationId: correlationId ?? randomUUID(),
+    });
+  }
+
+  @Patch(':documentVersionId/ocr-text')
+  @ApiOperation({ summary: 'Manually update OCR text for a document version (sets ocrStatus to MANUAL_EDIT)' })
+  @ApiParam({ name: 'documentVersionId', type: String })
+  @ApiOkResponse({ description: 'OCR text updated and status set to MANUAL_EDIT.' })
+  updateOcrText(
+    @Param('documentVersionId') documentVersionId: string,
+    @Body() body: { text: string },
+    @CurrentUser('id') actorId: string,
+    @Query('correlationId') correlationId: string | undefined,
+  ) {
+    return this.documentsService.updateOcrText(documentVersionId, body.text, {
       actorId,
       correlationId: correlationId ?? randomUUID(),
     });

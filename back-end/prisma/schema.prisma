@@ -46,6 +46,7 @@ enum OcrStatus {
   COMPLETED
   PARTIAL
   FAILED
+  MANUAL_EDIT
 }
 
 enum WebsiteScanStatus {

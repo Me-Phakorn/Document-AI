@@ -8,6 +8,7 @@ const statusStyles: Partial<Record<WorkflowStatus, string>> = {
   OCR_COMPLETED: 'border-[rgba(37,99,235,0.2)] bg-[rgba(37,99,235,0.1)] text-blue',
   OCR_PARTIAL: 'border-[rgba(181,106,9,0.2)] bg-[rgba(181,106,9,0.1)] text-amber',
   OCR_FAILED: 'border-[rgba(207,46,53,0.2)] bg-[rgba(207,46,53,0.1)] text-red',
+  MANUAL_EDIT: 'border-[rgba(181,106,9,0.2)] bg-[rgba(181,106,9,0.1)] text-amber',
   AI_PENDING: 'border-border bg-raised text-t2',
   AI_PROCESSING: 'border-[rgba(181,106,9,0.2)] bg-[rgba(181,106,9,0.1)] text-amber',
   AI_COMPLETED: 'border-[rgba(37,99,235,0.2)] bg-[rgba(37,99,235,0.1)] text-blue',

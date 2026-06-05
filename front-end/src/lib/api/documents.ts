@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '@/lib/api-client';
+import { apiGet, apiPatch, apiPost } from '@/lib/api-client';
 import type { WorkflowStatus } from '@/lib/types';
 
 export interface DocumentRecord {
@@ -153,6 +153,13 @@ export function getDocumentDetail(documentVersionId: string) {
 
 export function getOcrText(documentVersionId: string) {
   return apiGet<OcrTextResponse>(`/documents/${documentVersionId}/ocr-text`);
+}
+
+export function updateOcrText(documentVersionId: string, text: string) {
+  return apiPatch<{ documentVersionId: string; ocrStatus: string; textLength: number }>(
+    `/documents/${documentVersionId}/ocr-text`,
+    { text },
+  );
 }
 
 export interface UploadDocumentInput {

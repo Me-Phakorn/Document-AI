@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
 import { getDocumentDetail, getOcrText, refetchDocumentSource, reuploadDocumentVersion } from '@/lib/api/documents';
 import { formatBytes, formatDate, formatDateTime, shortHash } from '@/lib/format';
+import { OcrTextEditor } from './ocr-text-editor';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,21 +110,39 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
 
           <section className="overflow-hidden rounded-lg border border-border bg-panel shadow-panel">
             <div className="border-b border-border px-5 py-4">
-              <h2 className="font-semibold text-t1">Extracted text</h2>
-              <p className="mt-1 text-sm text-t2">
-                {ocrTextState.value
-                  ? `${ocrTextState.value.ocrArtifact.engine} · ${ocrTextState.value.ocrArtifact.pageCount ?? 0} pages · ${ocrTextState.value.textLength.toLocaleString()} characters`
-                  : ocrTextState.error
-                    ? 'OCR text could not be loaded from the DocAI API.'
-                    : 'No text artifact is available for this document.'}
-              </p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-semibold text-t1">Extracted text</h2>
+                  <p className="mt-1 text-sm text-t2">
+                    {ocrTextState.value
+                      ? `${ocrTextState.value.ocrArtifact.engine} · ${ocrTextState.value.ocrArtifact.pageCount ?? 0} pages · ${ocrTextState.value.textLength.toLocaleString()} characters`
+                      : ocrTextState.error
+                        ? 'OCR text could not be loaded from the DocAI API.'
+                        : 'No text artifact is available for this document.'}
+                  </p>
+                </div>
+                {ocrTextState.value?.ocrArtifact.engine === 'manual-edit' && (
+                  <span className="shrink-0 rounded-full border border-amber/30 bg-amber/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber">
+                    MANUAL EDIT
+                  </span>
+                )}
+              </div>
             </div>
             {ocrTextState.value ? (
-              <pre className="max-h-[620px] overflow-auto whitespace-pre-wrap p-5 font-sans text-sm leading-7 text-t2">{ocrTextState.value.text}</pre>
+              <OcrTextEditor
+                documentVersionId={documentVersionId}
+                initialText={ocrTextState.value.text}
+              />
             ) : ocrTextState.error ? (
-              <div className="p-5 text-sm text-red">{ocrTextState.error}</div>
+              <div className="flex flex-col gap-3 p-5">
+                <p className="text-sm text-red">{ocrTextState.error}</p>
+                <OcrTextEditor documentVersionId={documentVersionId} initialText="" />
+              </div>
             ) : (
-              <div className="p-5 text-sm text-t2">OCR text has not been stored for this version.</div>
+              <div className="flex flex-col gap-3 p-5">
+                <p className="text-sm text-t2">OCR text has not been stored for this version.</p>
+                <OcrTextEditor documentVersionId={documentVersionId} initialText="" />
+              </div>
             )}
           </section>
         </div>

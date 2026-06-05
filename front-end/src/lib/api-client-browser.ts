@@ -57,3 +57,23 @@ export async function apiPostBrowser<T>(path: string, body?: unknown): Promise<T
   return response.json() as Promise<T>;
 }
 
+export async function apiPatchBrowser<T>(path: string, body?: unknown): Promise<T> {
+  const response = await fetch(buildProxyUrl(path), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = undefined;
+    }
+    throw new ApiClientBrowserError(`API ${response.status}`, response.status, payload);
+  }
+
+  return response.json() as Promise<T>;
+}
+

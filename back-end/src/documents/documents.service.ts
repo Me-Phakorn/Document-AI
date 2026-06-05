@@ -208,6 +208,84 @@ export class DocumentsService {
     };
   }
 
+  async updateOcrText(documentVersionId: string, newText: string, context: RegisterContext) {
+    const documentVersion = await this.prisma.documentVersion.findUnique({ where: { id: documentVersionId } });
+    if (!documentVersion) {
+      throw new NotFoundException({ code: 'DOCUMENT_VERSION_NOT_FOUND', message: 'Document version was not found.' });
+    }
+
+    const ocrBucket = this.config.get<string>('MINIO_BUCKET_OCR', 'ocr');
+    const ocrArtifactId = randomUUID();
+    const textBuffer = Buffer.from(newText, 'utf8');
+    const textSha256 = this.sha256Buffer(textBuffer);
+    const textObjectKey = this.objectKeys.ocrText(ocrArtifactId);
+
+    await this.storage.putObject({
+      bucket: ocrBucket,
+      objectKey: textObjectKey,
+      content: textBuffer,
+      contentType: 'text/plain; charset=utf-8',
+      metadata: { 'x-amz-meta-sha256': textSha256 },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      const textObject = await tx.storedObject.create({
+        data: {
+          bucket: ocrBucket,
+          objectKey: textObjectKey,
+          fileName: `${documentVersionId}-manual.txt`,
+          contentType: 'text/plain; charset=utf-8',
+          byteSize: BigInt(textBuffer.byteLength),
+          sha256: textSha256,
+          ownerType: 'OcrArtifact',
+          ownerId: ocrArtifactId,
+          lifecycleStatus: StoredObjectLifecycleStatus.CURRENT,
+          metadata: { extractionMode: 'manual_edit', editorActorId: context.actorId ?? null },
+        },
+      });
+
+      await tx.ocrArtifact.create({
+        data: {
+          id: ocrArtifactId,
+          documentVersionId,
+          engine: 'manual-edit',
+          status: 'MANUAL_EDIT' as OcrStatus,
+          aggregateConfidence: 1.0,
+          minPageConfidence: 1.0,
+          pageCount: null,
+          failedPages: [],
+          warnings: [],
+          textObjectId: textObject.id,
+        },
+      });
+
+      await tx.documentVersion.update({
+        where: { id: documentVersionId },
+        data: {
+          ocrStatus: 'MANUAL_EDIT' as OcrStatus,
+          status: DocumentStatus.OCR_COMPLETED,
+        },
+      });
+
+      await tx.document.update({
+        where: { id: documentVersion.documentId },
+        data: { status: DocumentStatus.OCR_COMPLETED },
+      });
+    });
+
+    await this.audit.record({
+      actorId: context.actorId,
+      action: 'DOCUMENT_OCR_TEXT_MANUALLY_EDITED',
+      entityType: 'DocumentVersion',
+      entityId: documentVersionId,
+      previousState: { ocrStatus: documentVersion.ocrStatus },
+      nextState: { ocrStatus: 'MANUAL_EDIT', textLength: newText.length },
+      correlationId: context.correlationId,
+    });
+
+    return { documentVersionId, ocrStatus: 'MANUAL_EDIT' as OcrStatus, textLength: newText.length };
+  }
+
   async register(dto: RegisterDocumentDto, context: RegisterContext) {
     const normalizedFileHash = dto.fileSha256.toLowerCase();
     const normalizedContentHash = dto.contentSha256?.toLowerCase();

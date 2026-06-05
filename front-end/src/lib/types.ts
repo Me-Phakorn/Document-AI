@@ -6,6 +6,7 @@ export type WorkflowStatus =
   | 'OCR_COMPLETED'
   | 'OCR_PARTIAL'
   | 'OCR_FAILED'
+  | 'MANUAL_EDIT'
   | 'AI_PENDING'
   | 'AI_PROCESSING'
   | 'AI_COMPLETED'

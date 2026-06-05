@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "OcrStatus" ADD VALUE 'MANUAL_EDIT';
