@@ -17,8 +17,6 @@ WORKDIR /app
 # ── Workspace manifests (layer-cached until deps change) ─────────────────────
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY back-end/package.json  ./back-end/
-# pnpm workspace requires all package.json stubs to be present
-COPY front-end/package.json ./front-end/
 
 # Install only back-end workspace dependencies
 RUN pnpm install --filter @docai/back-end --no-frozen-lockfile

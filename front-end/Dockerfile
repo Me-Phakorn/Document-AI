@@ -17,7 +17,6 @@ WORKDIR /app
 
 # ── Workspace manifests (layer-cached until deps change) ─────────────────────
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY back-end/package.json  ./back-end/
 COPY front-end/package.json ./front-end/
 
 # Install only front-end workspace dependencies
