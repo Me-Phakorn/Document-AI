@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AiAnalysisStatus, DocumentStatus, OcrStatus, Prisma, SourceType, StoredObjectLifecycleStatus } from '@prisma/client';
 import type { DocumentVersion } from '@prisma/client';
@@ -7,6 +7,7 @@ import { basename, extname } from 'node:path';
 import { spawn } from 'node:child_process';
 import { PDFParse } from 'pdf-parse';
 import { AuditService } from '../audit/audit.service';
+import { OcrService } from '../ocr/ocr.service';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MinioStorageService } from '../storage/minio-storage.service';
@@ -39,6 +40,8 @@ interface CreateStoredDocumentVersionInput {
 
 @Injectable()
 export class DocumentsService {
+  private readonly logger = new Logger(DocumentsService.name);
+
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
@@ -50,6 +53,8 @@ export class DocumentsService {
     private readonly storage: MinioStorageService,
     @Inject(ConfigService)
     private readonly config: ConfigService,
+    @Inject(OcrService)
+    private readonly ocrService: OcrService,
   ) {}
 
   async list(query: PaginationQueryDto & { status?: DocumentStatus; search?: string; ignore?: string; sourceType?: SourceType }) {
@@ -602,7 +607,7 @@ export class DocumentsService {
       return { documentVersion, originalObject, textObject, ocrArtifact };
     });
 
-    return {
+    const storeResult = {
       outcome: input.outcome,
       documentId,
       documentVersionId,
@@ -612,6 +617,19 @@ export class DocumentsService {
       storedObjects: [this.serializeStoredObject(result.originalObject), this.serializeStoredObject(result.textObject)],
       ocrArtifact: result.ocrArtifact,
     };
+
+    // If pdf-parse found no native text (image PDF / scanned document), trigger
+    // the real OCR engine (Tesseract) asynchronously so it doesn't block the
+    // HTTP response. The document will transition from OCR_FAILED → OCR_COMPLETED
+    // once Tesseract finishes.
+    if (ocrStatus === OcrStatus.FAILED) {
+      this.logger.log(`No native text in ${documentVersionId} — queuing Tesseract OCR`);
+      this.ocrService.retriggerOcr(documentVersionId, { correlationId: input.context.correlationId, actorId: input.context.actorId }, true)
+        .then(() => this.logger.log(`Tesseract OCR completed for ${documentVersionId}`))
+        .catch((err: unknown) => this.logger.error(`Tesseract OCR failed for ${documentVersionId}: ${err instanceof Error ? err.message : String(err)}`));
+    }
+
+    return storeResult;
   }
 
   private findLatestDocumentVersion(documentId: string) {
